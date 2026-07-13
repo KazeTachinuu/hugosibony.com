@@ -1,0 +1,29 @@
+---
+import { fmtDate, fmtDateOrdinal } from '~/lib/fmt';
+import ViewCount from './ViewCount.astro';
+
+interface Props {
+  slug: string;
+  date?: Date | string;
+  updated?: Date | string;
+}
+
+const { slug, date, updated } = Astro.props;
+
+const showUpdated =
+  updated && (!date || fmtDate(date) !== fmtDate(updated));
+---
+
+<footer class="article-footer">
+  {showUpdated && updated && (
+    <div class="article-footer-updated">
+      <span class="article-footer-updated-label">Last updated on</span>
+      <time class="article-footer-updated-date" datetime={new Date(updated).toISOString()}>
+        {fmtDateOrdinal(updated)}
+      </time>
+    </div>
+  )}
+  <div class="article-footer-meta">
+    <ViewCount slug={slug} />
+  </div>
+</footer>

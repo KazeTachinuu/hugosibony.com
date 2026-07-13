@@ -1,0 +1,957 @@
+/* =============================================================================
+ * Print stylesheet for blog/xz-backdoor/
+ *
+ * Print strategy: preserve the article's visual language instead of flattening
+ * it into a generic report. We force a light paper palette, keep the ember/slate
+ * accents, disable interactive-only chrome, and make every diagram static and
+ * page-break aware for Chromium/Safari browser PDF export.
+ * ========================================================================== */
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 13mm 17mm;
+  }
+
+  :root,
+  :root.dark,
+  html.dark,
+  html.light {
+    color-scheme: light only;
+    --page-bg: #ffffff !important;
+    --page-text: #111827 !important;
+    --text: #111827 !important;
+    --text-secondary: #374151 !important;
+    --muted: #6b7280 !important;
+    --border: #d7dce2 !important;
+    --subtle-bg: #f7f8fa !important;
+    --code-bg: #f3f5f7 !important;
+    --accent: #1f5f99 !important;
+    --xz-attacker: #b84d2a !important;
+    --xz-defender: #255f9f !important;
+    --xz-infra: #6b7280 !important;
+    --xz-attacker-bg: #fbebe4 !important;
+    --xz-defender-bg: #eaf2fb !important;
+  }
+
+  /* Tailwind Typography keeps a separate variable system for dark mode via the
+     `dark:prose-invert` class. Those tokens (--tw-prose-bold, -links, -headings,
+     -body, -code, -hr) are set to #fff in invert mode; if we don't override
+     them here, every <strong>, <a>, and <h*> in prose prints white-on-white
+     when the user prints from a dark theme. Re-bind them to the print palette
+     so bold and links are always legible on paper. */
+  .prose,
+  .prose-lg,
+  .article-main .prose {
+    --tw-prose-body: var(--page-text) !important;
+    --tw-prose-headings: var(--page-text) !important;
+    --tw-prose-lead: var(--text-secondary) !important;
+    --tw-prose-links: #164ea6 !important;
+    --tw-prose-bold: var(--page-text) !important;
+    --tw-prose-counters: var(--muted) !important;
+    --tw-prose-bullets: var(--muted) !important;
+    --tw-prose-hr: var(--border) !important;
+    --tw-prose-quotes: var(--page-text) !important;
+    --tw-prose-quote-borders: var(--xz-defender) !important;
+    --tw-prose-captions: var(--text-secondary) !important;
+    --tw-prose-kbd: var(--page-text) !important;
+    --tw-prose-code: var(--page-text) !important;
+    --tw-prose-pre-code: var(--page-text) !important;
+    --tw-prose-pre-bg: var(--code-bg) !important;
+    --tw-prose-th-borders: var(--border) !important;
+    --tw-prose-td-borders: var(--border) !important;
+    --tw-prose-invert-body: var(--page-text) !important;
+    --tw-prose-invert-headings: var(--page-text) !important;
+    --tw-prose-invert-lead: var(--text-secondary) !important;
+    --tw-prose-invert-links: #164ea6 !important;
+    --tw-prose-invert-bold: var(--page-text) !important;
+    --tw-prose-invert-counters: var(--muted) !important;
+    --tw-prose-invert-bullets: var(--muted) !important;
+    --tw-prose-invert-hr: var(--border) !important;
+    --tw-prose-invert-quotes: var(--page-text) !important;
+    --tw-prose-invert-quote-borders: var(--xz-defender) !important;
+    --tw-prose-invert-captions: var(--text-secondary) !important;
+    --tw-prose-invert-kbd: var(--page-text) !important;
+    --tw-prose-invert-code: var(--page-text) !important;
+    --tw-prose-invert-pre-code: var(--page-text) !important;
+    --tw-prose-invert-pre-bg: var(--code-bg) !important;
+    --tw-prose-invert-th-borders: var(--border) !important;
+    --tw-prose-invert-td-borders: var(--border) !important;
+  }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  html, body {
+    margin: 0 !important;
+    background: var(--page-bg) !important;
+    color: var(--page-text) !important;
+    font-size: 10.6pt !important;
+    line-height: 1.52 !important;
+  }
+
+  /* Site chrome / interactive surfaces -------------------------------------- */
+  .skip-link, .site-header, .reading-progress-track, body > footer,
+  .breadcrumb, .article-sidebar, .article-footer, .article-likes,
+  .draft-banner, [data-theme-toggle], [data-mobile-nav], .mobile-nav,
+  .term-pop, .xz-mn-pop, .mnemonic-pop, .glossary-popover,
+  .copy-btn, .code-block-wrapper > button {
+    display: none !important;
+  }
+
+  .term-trigger, .xz-mn-trigger {
+    color: inherit !important;
+    text-decoration: none !important;
+    cursor: auto !important;
+    border: 0 !important;
+  }
+
+  /* Page layout -------------------------------------------------------------- */
+  .article-layout {
+    display: block !important;
+    max-width: none !important;
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .article-main {
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+  }
+  .article-main .prose,
+  article.prose,
+  .prose-lg {
+    max-width: none !important;
+    width: auto !important;
+    color: var(--page-text) !important;
+    font-size: 11.2pt !important;
+    line-height: 1.58 !important;
+  }
+
+  .xz-five {
+    margin: 7mm 0 9mm !important;
+    padding: 4mm 0 !important;
+    border-top: 1pt solid var(--border) !important;
+    border-bottom: 1pt solid var(--border) !important;
+    break-inside: avoid;
+  }
+  .xz-five-title {
+    margin: 0 0 3mm !important;
+    font-size: 8pt !important;
+    letter-spacing: 0.16em !important;
+    color: var(--xz-attacker) !important;
+  }
+  .xz-five-list {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 2.6mm 6mm !important;
+  }
+  .xz-five-list li {
+    display: grid !important;
+    grid-template-columns: 9mm 24mm 1fr !important;
+    align-items: baseline !important;
+    gap: 2.5mm !important;
+    padding: 0 !important;
+    break-inside: avoid;
+  }
+  .xz-five-list li::before {
+    position: static !important;
+    font-size: 8pt !important;
+    color: var(--xz-defender) !important;
+  }
+  .xz-five-list strong {
+    font-size: 9.8pt !important;
+    margin: 0 !important;
+  }
+  .xz-five-list span {
+    font-size: 9pt !important;
+    line-height: 1.35 !important;
+  }
+
+  /* Cover page: EPITA mark top-right, title block centered, byline pinned to
+     the bottom edge: official-report cadence. */
+  .article-header {
+    min-height: 245mm;
+    display: block !important;
+    position: relative;
+    border: 1.1pt solid var(--page-text);
+    border-top: 7pt solid var(--xz-attacker);
+    padding: 90mm 18mm 36mm !important;
+    margin: 0 0 12mm !important;
+    break-after: page;
+    page-break-after: always;
+    background:
+      linear-gradient(135deg, rgba(184,77,42,0.07), transparent 44%),
+      linear-gradient(315deg, rgba(37,95,159,0.08), transparent 48%),
+      var(--page-bg) !important;
+  }
+  .article-header::before {
+    content: "";
+    position: absolute;
+    top: 16mm;
+    right: 18mm;
+    width: 34mm;
+    height: 24mm;
+    background: url('/images/epita-logo-crop.png') center / contain no-repeat;
+  }
+  .article-header :is(h1, .article-title) {
+    margin: 0 0 7mm !important;
+    font-size: 31pt !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.04em !important;
+    max-width: 14ch !important;
+  }
+  .article-header :is(p, .article-description) {
+    max-width: 58ch !important;
+    font-size: 12.5pt !important;
+    line-height: 1.55 !important;
+    color: var(--text-secondary) !important;
+    text-align: left !important;
+  }
+  .article-header :is(.label, .article-category, time, .article-date, .article-updated, .article-filed) {
+    font-family: var(--font-sans, system-ui, sans-serif) !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    max-width: none !important;
+    white-space: normal !important;
+  }
+  .article-divider { display: none !important; }
+  .article-header::after {
+    content: "Hugo Sibony · Léa Bonet · EPITA · hugosibony.com/blog/xz-backdoor";
+    position: absolute;
+    left: 18mm;
+    right: 18mm;
+    bottom: 18mm;
+    padding-top: 5mm;
+    border-top: 0.8pt solid var(--border);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 8.5pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Printable report brief --------------------------------------------------- */
+  .xz-report-brief {
+    display: block !important;
+    position: relative;
+    break-after: page;
+    page-break-after: always;
+    margin: 0 0 10mm !important;
+    padding: 0 !important;
+  }
+  .xz-report-logo {
+    display: block !important;
+    float: right;
+    width: 31mm !important;
+    height: auto !important;
+    margin: 0 0 4mm 8mm !important;
+  }
+  .xz-report-kicker {
+    margin: 0 0 1.5mm !important;
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.18em !important;
+    text-transform: uppercase !important;
+    color: var(--xz-attacker) !important;
+  }
+  .xz-report-authors {
+    margin: 0 0 5mm !important;
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 8.2pt !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    color: var(--muted) !important;
+  }
+  .xz-report-title {
+    margin: 0 0 5.5mm !important;
+    padding: 0 0 4mm !important;
+    border: 0 !important;
+    border-bottom: 2pt solid var(--page-text) !important;
+    break-before: auto !important;
+    page-break-before: auto !important;
+    font-size: 20pt !important;
+    line-height: 1.05 !important;
+    letter-spacing: -0.035em !important;
+    color: var(--page-text) !important;
+  }
+  .xz-report-meta {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 !important;
+    margin: 0 0 5.5mm !important;
+    border: 0.8pt solid var(--border) !important;
+    background: #ffffff !important;
+  }
+  .xz-report-meta div {
+    display: grid !important;
+    grid-template-columns: 31mm 1fr !important;
+    gap: 3mm !important;
+    padding: 2.35mm 4mm !important;
+    border-bottom: 0.6pt solid var(--border) !important;
+  }
+  .xz-report-meta div:nth-child(odd) {
+    border-right: 0.6pt solid var(--border) !important;
+  }
+  .xz-report-meta dt {
+    margin: 0 !important;
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: var(--muted) !important;
+  }
+  .xz-report-meta dd {
+    margin: 0 !important;
+    font-size: 8.6pt !important;
+    line-height: 1.28 !important;
+    color: var(--page-text) !important;
+  }
+  .xz-report-summary {
+    border-left: 4pt solid var(--xz-defender) !important;
+    padding: 0 0 0 5mm !important;
+  }
+  .xz-report-summary h3 {
+    margin: 0 0 2mm !important;
+    font-size: 12pt !important;
+    line-height: 1.2 !important;
+    color: var(--xz-defender) !important;
+  }
+  .xz-report-summary p {
+    margin: 0 !important;
+    font-size: 9.25pt !important;
+    line-height: 1.45 !important;
+    text-align: left !important;
+    hyphens: none !important;
+  }
+  .xz-report-impact {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 3.3mm !important;
+    margin: 5.5mm 0 !important;
+  }
+  .xz-report-impact article {
+    border: 0.8pt solid var(--border) !important;
+    border-top: 3pt solid var(--xz-attacker) !important;
+    background: #ffffff !important;
+    padding: 3mm !important;
+    break-inside: avoid;
+  }
+  .xz-report-impact span {
+    display: block !important;
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    color: var(--muted) !important;
+  }
+  .xz-report-impact strong {
+    display: block !important;
+    margin-top: 1mm !important;
+    font-size: 12.2pt !important;
+    line-height: 1.1 !important;
+    color: var(--xz-attacker) !important;
+  }
+  .xz-report-impact p {
+    margin: 2mm 0 0 !important;
+    font-size: 8pt !important;
+    line-height: 1.28 !important;
+    color: var(--text-secondary) !important;
+  }
+  .xz-report-map {
+    list-style: none !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    margin: 3mm 0 0 !important;
+    padding: 0 !important;
+    counter-reset: report-map;
+  }
+  .xz-report-map li {
+    counter-increment: report-map;
+    display: grid !important;
+    grid-template-columns: 10mm 30mm 1fr !important;
+    align-items: baseline !important;
+    gap: 3mm !important;
+    padding: 1.15mm 0 !important;
+    border-bottom: 0.5pt solid var(--border) !important;
+    break-inside: avoid;
+  }
+  .xz-report-map li::before {
+    content: counter(report-map, decimal-leading-zero);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-weight: 700;
+    color: var(--xz-defender);
+  }
+  .xz-report-map strong {
+    color: var(--page-text) !important;
+  }
+  .xz-report-map span {
+    color: var(--text-secondary) !important;
+    font-size: 8.4pt !important;
+  }
+
+  /* Typography --------------------------------------------------------------- */
+  p, li, blockquote { orphans: 3; widows: 3; }
+  /* Justified prose with auto hyphenation prints cleaner than ragged-right;
+     report-style. Hyphenation is essential here: justifying without it pushes
+     short lines into ugly word-spacing gaps. */
+  .article-main .prose :where(p, blockquote):not(:where([class~="not-prose"] *)) {
+    text-align: justify !important;
+    hyphens: auto !important;
+    -webkit-hyphens: auto !important;
+    hyphenate-limit-chars: 7 3 3;
+  }
+  .article-main .prose :where(ul, ol):not(:where([class~="not-prose"] *)) {
+    margin: 3mm 0 !important;
+    padding-left: 6mm !important;
+  }
+  .article-main .prose :where(li):not(:where([class~="not-prose"] *)) {
+    margin: 1.4mm 0 !important;
+    padding-left: 1mm !important;
+    text-align: justify !important;
+    hyphens: auto !important;
+    -webkit-hyphens: auto !important;
+    hyphenate-limit-chars: 7 3 3;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .article-main .prose :where(li p):not(:where([class~="not-prose"] *)) {
+    margin: 0 !important;
+    text-align: justify !important;
+  }
+  .article-main .prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+    color: var(--page-text) !important;
+    background: var(--subtle-bg) !important;
+    border-left: 3pt solid var(--xz-defender) !important;
+    padding: 3mm 4mm !important;
+  }
+  .article-main .prose :where(blockquote p):not(:where([class~="not-prose"] *)) {
+    color: var(--page-text) !important;
+    font-style: normal !important;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--page-text) !important;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .prose h2 {
+    break-before: page;
+    page-break-before: always;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    font-size: 21pt !important;
+    line-height: 1.08 !important;
+    border-top: 2pt solid var(--page-text);
+    padding-top: 5mm !important;
+  }
+  .prose > h2:first-of-type { break-before: page; page-break-before: always; }
+  .prose h3 { font-size: 15pt !important; margin-top: 8mm !important; }
+  .prose h4 { font-size: 9pt !important; }
+
+  .prose a {
+    color: #164ea6 !important;
+    text-decoration: none !important;
+    border-bottom: 0.4pt solid rgba(22, 78, 166, 0.35) !important;
+  }
+
+  /* Code --------------------------------------------------------------------- */
+  pre, code, kbd, samp { font-size: 8.3pt !important; }
+  pre {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    background: var(--code-bg) !important;
+    border: 0.7pt solid var(--border) !important;
+  }
+  :not(pre) > code {
+    background: rgba(0,0,0,0.055) !important;
+    color: var(--page-text) !important;
+    padding: 0.04em 0.28em !important;
+    border-radius: 2.5px !important;
+  }
+  /* Expressive-code defaults to `display: flex` on the .expressive-code wrapper
+     and the inner figure/pre, which collapses to height: 0 inside the print
+     content area. Force a block flow so code blocks actually render in PDF.
+     Also reset EC's negative `margin-top`; that's a flex-layout artifact that
+     leaks into block mode and pulls the code block up into the preceding text. */
+  .expressive-code,
+  .expressive-code > figure,
+  .expressive-code > figure > pre,
+  figure.expressive-code,
+  figure.expressive-code > pre,
+  .code-block-wrapper {
+    display: block !important;
+    max-width: 100% !important;
+    width: auto !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    min-height: 0 !important;
+    /* Splitting a code block across pages drops the title bar on the
+       continuation page; the second slice loses all context. Keep each
+       block whole; Chromium falls back to splitting only if the block is
+       genuinely taller than the printable area. */
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .expressive-code,
+  figure.expressive-code {
+    margin-top: 4mm !important;
+    margin-bottom: 4mm !important;
+    /* Without an explicit overflow clip, Chromium can render the figure's
+       rounded outline at the bottom of a page even when break-inside: avoid
+       has already moved the figure's content to the next page, leaving an
+       empty stub band. Hidden overflow suppresses that ghost rendering. */
+    overflow: hidden !important;
+  }
+  .expressive-code > figure > figcaption,
+  .expressive-code > figure > pre > code {
+    display: block !important;
+  }
+  /* Hide expressive-code's interactive copy chrome, but NOT the .frame figure
+     itself, which IS the code-block wrapper (display:none would erase the whole
+     code block from print). */
+  .expressive-code .copy,
+  .expressive-code button { display: none !important; }
+
+  /* Sober print palette for code blocks. Expressive-code ships a vibrant
+     syntax theme (indigo / magenta / purple) tuned for screen reading; on a
+     printed security report those colors look loud and casual. Collapse the
+     whole spectrum to a sober black-on-stone palette: all code prints in
+     page-text, italic styling is dropped on keywords (EC uses italic both
+     for comments AND for function-name tokens, which would conflate the two
+     once colors are equalized), and comments are re-identified by their
+     specific comment hue (#3B647A light / #738F9E dark theme), tinted muted. */
+  .expressive-code pre,
+  .expressive-code pre code,
+  .expressive-code pre code .code,
+  .expressive-code pre code span {
+    color: var(--page-text) !important;
+    font-style: normal !important;
+  }
+  .expressive-code pre code span[style*="3B647A"],
+  .expressive-code pre code span[style*="738F9E"] {
+    color: var(--muted) !important;
+    font-style: italic !important;
+  }
+  /* Re-skin the title strip from default dark-theme onto a quiet header. */
+  .expressive-code figcaption.header {
+    background: var(--page-text) !important;
+    color: #ffffff !important;
+  }
+  .expressive-code figcaption.header .title {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+  }
+  /* Diff highlight bands: keep a hint of color so additions still read as
+     additions, but tone them down to a printable wash. */
+  .expressive-code pre code .ec-line.ins,
+  .expressive-code pre code .ec-line.mark,
+  .expressive-code pre code .ec-line[class*="ins"] {
+    background: #e9f4ec !important;
+  }
+  .expressive-code pre code .ec-line.del,
+  .expressive-code pre code .ec-line[class*="del"] {
+    background: #fbeaea !important;
+  }
+
+  /* Universal figure/widget behavior ---------------------------------------- */
+  figure, figcaption, table, blockquote,
+  .xz-widget, .not-prose,
+  .xz-cast-card, .xz-sabotage-card, .xz-byteflow-row,
+  .xz-m4flow, .xz-startup, .xz-pathin, .xz-gotrewrite,
+  .xz-stub, .xz-latency, .xz-distros, .xz-tzmap, .xz-attrchart,
+  .xz-tarball, .xz-cfg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  figcaption {
+    color: var(--text-secondary) !important;
+    font-size: 9pt !important;
+  }
+  svg { max-width: 100% !important; height: auto !important; }
+
+  /* XZ widgets: static, compact, printable ---------------------------------- */
+  .xz-widget, .xz-cast, .xz-sabotage, .xz-byteflow, .xz-m4flow,
+  .xz-startup, .xz-gotrewrite, .xz-pathin, .xz-stub, .xz-tzmap,
+  .xz-attrchart, .xz-tarball, .xz-latency, .xz-distros, .xz-cfg {
+    margin-block: 6mm !important;
+    max-width: 100% !important;
+  }
+
+  .xz-cast-grid, .xz-gotrewrite-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4mm !important;
+  }
+  .xz-sabotage {
+    margin-top: 7mm !important;
+  }
+  .xz-sabotage-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    padding-left: 7mm !important;
+  }
+  .xz-sabotage-grid::before {
+    left: 1.2mm !important;
+    width: 1.2pt !important;
+  }
+  .xz-sabotage-card {
+    grid-template-columns: 42mm 1fr !important;
+    gap: 5mm !important;
+    padding: 3.2mm 0 !important;
+    align-items: start !important;
+  }
+  .xz-sabotage-card::before {
+    left: -7.1mm !important;
+    top: 4mm !important;
+    width: 2.6mm !important;
+    height: 2.6mm !important;
+    border-width: 1.2pt !important;
+  }
+  .xz-sabotage-head { display: contents !important; }
+  .xz-sabotage-when {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    font-size: 8pt !important;
+    line-height: 1.35 !important;
+    letter-spacing: 0.08em !important;
+    color: var(--xz-attacker) !important;
+    overflow-wrap: normal !important;
+  }
+  .xz-sabotage-card h4 {
+    grid-column: 2 !important;
+    font-size: 10.2pt !important;
+    line-height: 1.25 !important;
+    margin: 0 0 1mm !important;
+  }
+  .xz-sabotage-effect {
+    grid-column: 2 !important;
+    font-size: 9.4pt !important;
+    line-height: 1.42 !important;
+    margin: 0 !important;
+    color: var(--text-secondary) !important;
+  }
+  .xz-sabotage-src {
+    display: none !important;
+  }
+  .xz-cast-card, .xz-sabotage-card,
+  .xz-gotrewrite-col, .xz-stub-cert, .xz-stub-flow,
+  .xz-m4flow, .xz-startup, .xz-byteflow {
+    background: #ffffff !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Timeline: compact Mandiant-style incident chronology for print. */
+  .xz-tl, .xz-tl-inner, .xz-tl-row, .xz-tl-event,
+  .xz-tl-beam-fill, .xz-tl-phase {
+    opacity: 1 !important;
+    transform: none !important;
+    visibility: visible !important;
+  }
+  .xz-tl { margin-block: 5mm !important; }
+  .xz-tl-beam,
+  .xz-tl-phase-marker,
+  .xz-tl-event-source,
+  .xz-tl-event-quote {
+    display: none !important;
+  }
+  .xz-tl-row {
+    grid-template-columns: 34mm 1fr !important;
+    gap: 6mm !important;
+    padding: 4mm 0 0 !important;
+    margin: 0 0 7mm !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    border-top: 1pt solid var(--border);
+  }
+  .xz-tl-phase {
+    position: relative !important;
+    top: auto !important;
+    padding-left: 0 !important;
+  }
+  .xz-tl-phase-name {
+    font-size: 13pt !important;
+    letter-spacing: -0.02em !important;
+  }
+  .xz-tl-phase-num,
+  .xz-tl-phase-range {
+    font-size: 7.5pt !important;
+    color: var(--muted) !important;
+  }
+  .xz-tl-events {
+    gap: 0 !important;
+    /* Try to keep the last few events of a phase together so a single event
+       doesn't orphan onto the next page without its phase-label column. */
+    widows: 4;
+    orphans: 4;
+  }
+  .xz-tl-event {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    padding: 0 0 2mm !important;
+    margin: 0 0 2mm !important;
+    border-bottom: 0.6pt solid var(--border);
+  }
+  .xz-tl-event-meta {
+    margin: 0 0 0.8mm !important;
+    gap: 2.5mm !important;
+  }
+  .xz-tl-event-date {
+    font-size: 8.3pt !important;
+    color: var(--page-text) !important;
+  }
+  .xz-tl-event-actor,
+  .xz-tl-event-kind { font-size: 8pt !important; }
+  .xz-tl-event-title {
+    font-size: 9.2pt !important;
+    line-height: 1.22 !important;
+    margin: 0 0 0.8mm !important;
+    max-width: none !important;
+  }
+  .xz-tl-event-summary {
+    font-size: 8.6pt !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  .xz-tl-email {
+    border: 0.7pt solid var(--border) !important;
+    margin: 1.5mm 0 !important;
+  }
+  .xz-tl-email-headers {
+    grid-template-columns: 18mm 1fr !important;
+    padding: 2mm 2.5mm !important;
+    font-size: 7.8pt !important;
+    background: var(--subtle-bg) !important;
+  }
+  .xz-tl-email-body {
+    padding: 2.5mm !important;
+    font-size: 9pt !important;
+    line-height: 1.4 !important;
+  }
+  .xz-tl-event-trace {
+    font-size: 8pt !important;
+    padding: 2mm !important;
+    margin: 1.5mm 0 0 !important;
+  }
+
+  /* Hook installer diagram (Find sshd → Find GOT slot → Rewrite pointer).
+     A4 content area (~695px) trips the component's 720px mobile MQ, so the
+     desktop 5-column grid has to be re-asserted here. */
+  .xz-install {
+    max-width: 100% !important;
+    margin: 5mm 0 !important;
+    padding: 4mm !important;
+    border-top-width: 2.5pt !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .xz-install-eyebrow {
+    margin-bottom: 3mm !important;
+    font-size: 7.5pt !important;
+  }
+  .xz-install-flow {
+    display: grid !important;
+    grid-template-columns: 1fr 6mm 1fr 6mm 1fr !important;
+    gap: 2.5mm !important;
+    align-items: stretch !important;
+  }
+  .xz-install-step {
+    padding: 3mm !important;
+  }
+  .xz-install-step span {
+    font-size: 6.6pt !important;
+    margin-bottom: 1.5mm !important;
+  }
+  .xz-install-step strong {
+    font-size: 9pt !important;
+    line-height: 1.2 !important;
+  }
+  .xz-install-step p {
+    font-size: 7.6pt !important;
+    line-height: 1.32 !important;
+    margin-top: 1.5mm !important;
+  }
+  .xz-install-arrow {
+    font-size: 11pt !important;
+    transform: none !important;
+    min-height: auto !important;
+  }
+  .xz-install-note {
+    margin-top: 3.5mm !important;
+    padding-top: 2.5mm !important;
+    font-size: 8.4pt !important;
+    line-height: 1.45 !important;
+  }
+
+  /* Dense diagrams: slightly shrink instead of spilling. */
+  .xz-startup-grid { grid-template-columns: 1.15fr 0.72fr !important; }
+  .xz-startup-body p,
+  .xz-byteflow-label,
+  .xz-m4flow-note,
+  .xz-pathin-link .p,
+  .xz-stub-flow-steps li .note,
+  .xz-distros-note { font-size: 8.7pt !important; }
+
+  .xz-tzmap-frame { max-height: 145mm !important; }
+  .xz-tzmap-labels { height: 18mm !important; }
+  .xz-tzmap figcaption { max-width: 100% !important; }
+
+  /* Correct component class names used by the page. */
+  .xz-distros-grid,
+  .xz-distros-col,
+  .xz-distros-item,
+  .xz-cfg svg,
+  .xz-latency-svg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .xz-distros { margin: 5mm 0 !important; }
+  .xz-distros-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 5mm !important;
+    align-items: start !important;
+  }
+  .xz-distros-col { gap: 2mm !important; }
+  .xz-distros-col-head {
+    padding-bottom: 1.5mm !important;
+    border-bottom-width: 1pt !important;
+  }
+  .xz-distros-col-label {
+    font-size: 7.5pt !important;
+    letter-spacing: 0.14em !important;
+  }
+  .xz-distros-col-count {
+    font-size: 13pt !important;
+  }
+  .xz-distros-item {
+    padding: 1.8mm 0 !important;
+    border-bottom: 0.5pt solid var(--border) !important;
+  }
+  .xz-distros-item-mark { gap: 1.6mm !important; }
+  .xz-distros-item-icon {
+    width: 3mm !important;
+    height: 3mm !important;
+  }
+  .xz-distros-item-name {
+    font-size: 9.6pt !important;
+    color: var(--page-text) !important;
+  }
+  .xz-distros-item-ver {
+    font-size: 8pt !important;
+    color: var(--muted) !important;
+  }
+  .xz-distros-item-note {
+    font-size: 8.4pt !important;
+    line-height: 1.35 !important;
+    margin: 1mm 0 0 4.6mm !important;
+    color: var(--text-secondary) !important;
+  }
+
+  /* End CTA is useful online, noisy in a report PDF. */
+  .xz-tryit { display: none !important; }
+
+  /* Notes & sources: report-style references list. The source markdown is
+     a flat sequence of <p><strong>Group title</strong></p> followed by <ul>
+     of entries; we re-style it to a typographic table:
+       · group titles become caps subheads with a hairline accent rule
+       · each <li> gets breathing room and a hanging indent so the bold link
+         title is visually anchored at the bullet, with description text
+         flowing in a justified column to its right. */
+  #notes--sources ~ p:has(> strong:only-child),
+  .prose > p:has(> strong:only-child) {
+    margin: 8mm 0 2.5mm !important;
+    padding-bottom: 1.2mm !important;
+    border-bottom: 0.5pt solid var(--border) !important;
+    text-align: left !important;
+    hyphens: none !important;
+  }
+  #notes--sources ~ p:has(> strong:only-child) strong,
+  .prose > p:has(> strong:only-child) strong {
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 8.5pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.14em !important;
+    text-transform: uppercase !important;
+    color: var(--xz-attacker) !important;
+  }
+  #notes--sources ~ ul {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+  }
+  #notes--sources ~ ul > li {
+    position: relative !important;
+    padding: 2.4mm 0 2.4mm 5mm !important;
+    margin: 0 !important;
+    border-bottom: 0.4pt solid var(--border) !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  #notes--sources ~ ul > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 3.6mm;
+    width: 2.5mm;
+    height: 0.6pt;
+    background: var(--muted);
+  }
+  #notes--sources ~ ul > li > strong:first-child {
+    display: inline !important;
+  }
+  #notes--sources ~ ul > li > strong:first-child a {
+    font-weight: 700 !important;
+    color: var(--page-text) !important;
+    border-bottom: 0 !important;
+  }
+
+  /* "What this attack proved" lessons ---------------------------------------- */
+  .xz-lessons {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 3mm !important;
+    margin: 4mm 0 !important;
+  }
+  .xz-lessons article {
+    display: grid !important;
+    grid-template-columns: 9mm 1fr !important;
+    align-items: baseline !important;
+    column-gap: 3mm !important;
+    padding: 3mm 4mm !important;
+    border: 0.7pt solid var(--border) !important;
+    border-top: 2.5pt solid var(--xz-defender) !important;
+    break-inside: avoid;
+  }
+  .xz-lessons article > span {
+    grid-row: 1 / span 2 !important;
+    font-family: var(--font-mono, ui-monospace, monospace) !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    color: var(--xz-defender) !important;
+  }
+  .xz-lessons article > h4 {
+    margin: 0 !important;
+    font-size: 11.2pt !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    color: var(--page-text) !important;
+  }
+  .xz-lessons article > p {
+    margin: 1.5mm 0 0 !important;
+    font-size: 9.3pt !important;
+    line-height: 1.42 !important;
+    color: var(--text-secondary) !important;
+  }
+}

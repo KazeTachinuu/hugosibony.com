@@ -1,0 +1,195 @@
+---
+title: "RISCy Business"
+categories: "Dev"
+cat: "chal"
+ctf: "Shutlock"
+solved: true
+date: 2026-07-07T00:00:00Z
+updated: 2026-07-13
+draft: false
+description: "Un processeur volé dont le jeu d'instructions change à chaque démarrage. Écrire l'émulateur du caméléon : 3000 programmes, 60 secondes."
+difficulty: "⭐⭐"
+---
+
+> Un processeur expérimental a été volé des labos de recherche. Problème : son jeu d'instructions change à chaque démarrage. Les ingénieurs l'ont surnommé "le caméléon".
+>
+> Votre mission : écrire un émulateur capable de s'adapter à ses mutations.
+>
+> 3000 programmes. 60 secondes. Bonne chance.
+
+<Callout type="info" title="Le challenge">
+
+On se connecte pour voir le protocole : une VM 8-bit, 3000 programmes à émuler en 60 secondes, et à chaque round on renvoie `R0`. Les <Term slug="opcode">opcodes</Term> sont remélangés à chaque session.
+
+```
+$ nc <ip> <port>
+=== RISCy Business ===
+VM RISC 8-bit: 8 registres (R0-R7), 256 octets de memoire.
+Emulez 3000 programmes en 60 secondes. Retournez R0.
+
+Instructions: {"NOM": [opcode, taille], ...}
+Suffixes: IMM=immediate, REG=register, REL=relative, MEM=memory
+{"MOV_IMM":[52,3],"MOV_REG":[229,3],"ADD_IMM":[59,3], ... ,"POP":[62,2]}
+
+[ROUND 1/3000] BYTECODE: 34000a3b0005
+R0>
+```
+
+</Callout>
+
+<RiscVm />
+
+<Callout type="note" title="Le mapping JSON">
+
+Le serveur envoie `nom: [opcode, taille]` :
+
+```json
+{"MOV_IMM":[52,3], "ADD_IMM":[59,3], ... }
+```
+
+`52` (`0x34`) encode `MOV_IMM`, sur `3` octets. Les opcodes changent à chaque connexion : on ne peut pas les hardcoder. Seuls les noms sont stables, et ils décrivent l'opération.
+
+</Callout>
+
+<Callout type="note" title="Format des instructions">
+
+Les suffixes donnent le type d'opérande : `IMM` = constante, `REG` = registre, `REL` = offset signé (sauts), `MEM` = accès mémoire. Croisés avec les tailles, ça donne deux encodages :
+
+| Taille | Format | Instructions |
+|--------|--------|--------------|
+| 3 octets | `[op] [reg_dst] [imm/reg_src]` | MOV, ADD, SUB, MUL, XOR, AND, OR, SHL, SHR, CMP, LDR, STR |
+| 2 octets | `[op] [reg/offset]` | NOT, PUSH, POP, JMP, JZ, JNZ |
+
+Le premier bytecode `34000a3b0005` se décode en :
+
+```
+34 00 0a  ->  MOV_IMM R0, 10
+3b 00 05  ->  ADD_IMM R0, 5
+```
+
+`R0 = 15`. On exécute selon le nom, pas selon la valeur de l'opcode : `op_name[octet]` redonne le mnémonique, le `match` fait le reste. Le même code marche quel que soit le mélange.
+
+</Callout>
+
+<Callout type="tip" title="Émuler la VM">
+
+État déduit de la bannière : registres `R0-R7` 8-bit, 256 octets de mémoire, pile `SP = 255` décroissante, flag zéro `ZF`.
+
+```python
+def signed8(v):                       # les offsets REL sont signés
+    return v - 256 if v & 0x80 else v
+
+def execute(code, mapping):
+    op_name = {v[0]: k for k, v in mapping.items()}   # opcode -> mnémonique
+    op_size = {v[0]: v[1] for v in mapping.values()}
+
+    reg, mem = [0] * 8, [0] * 256
+    sp, pc, zf = 255, 0, False
+
+    while pc < len(code):
+        op = code[pc]
+        name = op_name.get(op)
+        if not name:
+            pc += 1; continue
+
+        size = op_size[op]
+        if pc + size > len(code):
+            break
+
+        rd  = code[pc + 1] & 7
+        imm = code[pc + 2] if size == 3 else code[pc + 1]
+        rs  = imm & 7
+
+        match name:
+            case "MOV_IMM": reg[rd] = imm
+            case "MOV_REG": reg[rd] = reg[rs]
+            case "ADD_IMM": reg[rd] = (reg[rd] + imm) & 0xFF; zf = reg[rd] == 0
+            case "ADD_REG": reg[rd] = (reg[rd] + reg[rs]) & 0xFF; zf = reg[rd] == 0
+            case "SUB_IMM": reg[rd] = (reg[rd] - imm) & 0xFF; zf = reg[rd] == 0
+            case "SUB_REG": reg[rd] = (reg[rd] - reg[rs]) & 0xFF; zf = reg[rd] == 0
+            case "MUL_REG": reg[rd] = (reg[rd] * reg[rs]) & 0xFF; zf = reg[rd] == 0
+            case "XOR_REG": reg[rd] ^= reg[rs]; zf = reg[rd] == 0
+            case "AND_REG": reg[rd] &= reg[rs]; zf = reg[rd] == 0
+            case "OR_REG":  reg[rd] |= reg[rs]; zf = reg[rd] == 0
+            case "NOT_REG": reg[rd] = (~reg[rd]) & 0xFF; zf = reg[rd] == 0
+            case "SHL_IMM": reg[rd] = (reg[rd] << (imm & 7)) & 0xFF; zf = reg[rd] == 0
+            case "SHR_IMM": reg[rd] >>= imm & 7; zf = reg[rd] == 0
+            case "CMP_REG": zf = reg[rd] == reg[rs]
+            case "LDR_MEM": reg[rd] = mem[reg[rs]]
+            case "STR_MEM": mem[reg[rs]] = reg[rd]
+            case "PUSH":    mem[sp] = reg[rd]; sp = (sp - 1) & 0xFF
+            case "POP":     sp = (sp + 1) & 0xFF; reg[rd] = mem[sp]
+            case "JMP_REL": pc += size + signed8(imm); continue
+            case "JZ_REL":
+                if zf: pc += size + signed8(imm); continue
+            case "JNZ_REL":
+                if not zf: pc += size + signed8(imm); continue
+
+        pc += size
+
+    return reg[0]
+```
+
+</Callout>
+
+<Callout type="note" title="La boucle">
+
+3000 rounds en 60 s : pas de round-trip inutile. `pwntools` gère la connexion, une regex attrape le bytecode, on renvoie `R0`. Le serveur affiche des en-têtes `NIVEAU x/8` (arithmétique, bitwise, mémoire, pile, boucles, conditionnels), on les ignore.
+
+```python
+import json, re
+from pwn import remote, context
+from tqdm import tqdm
+context.log_level = "error"
+
+FLAG_RE     = re.compile(rb"SHLK\{[^}]+\}")
+BYTECODE_RE = re.compile(rb"BYTECODE:\s*([0-9a-fA-F]+)")
+
+def solve(host, port):
+    io = remote(host, port)
+    mapping = None
+    pbar = tqdm(desc="Rounds", unit="", bar_format="{desc}: {n_fmt} [{rate_fmt}]")
+
+    while True:
+        try:
+            line = io.recvline(timeout=5)
+        except EOFError:
+            break
+
+        if line.startswith(b"{"):                    # le mapping des opcodes
+            mapping = json.loads(line)
+            continue
+        if match := BYTECODE_RE.search(line):        # un round : émule, renvoie R0
+            code = bytes.fromhex(match[1].decode())
+            io.sendline(str(execute(code, mapping)).encode())
+            pbar.update(1)
+            continue
+        if b"FAUX" in line:                          # mauvaise réponse
+            pbar.close()
+            print(line.decode().strip())
+            break
+        if match := FLAG_RE.search(line):            # flag
+            pbar.close()
+            print(match[0].decode())
+            break
+
+    io.close()
+
+solve("<ip>", <port>)
+```
+
+Environ 1900 rounds/s, largement dans les temps :
+
+```
+Rounds: 3000 [1906.34/s]
+
+SHLK{M4k3_YouR_MoV3}
+```
+
+</Callout>
+
+<Callout type="success" title="Flag">
+
+<Flag flag="SHLK{M4k3_YouR_MoV3}" />
+
+</Callout>

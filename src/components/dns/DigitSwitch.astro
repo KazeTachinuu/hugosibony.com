@@ -1,0 +1,156 @@
+---
+/**
+ * Quad9's last digit as an interactive mode switch: pick .9 / .10 / .11,
+ * watch the feature rows flip. Data from
+ * https://quad9.net/service/service-addresses-and-features/
+ */
+const MODES = [
+  {
+    digit: "9",
+    tag: "recommended",
+    blurb: "The default. Refuses to resolve domains on its threat-intel blocklist.",
+    features: { block: true, dnssec: true, ecs: false },
+  },
+  {
+    digit: "10",
+    tag: "for experts only",
+    blurb: "Blocklist off, for malware analysis, or debugging a suspected false positive.",
+    features: { block: false, dnssec: true, ecs: false },
+  },
+  {
+    digit: "11",
+    tag: "with ECS",
+    blurb: "Same blocklist, plus part of your IP is sent upstream so CDNs route you closer.",
+    features: { block: true, dnssec: true, ecs: true },
+  },
+];
+const ROWS = [
+  { key: "block", label: "Malware blocklist" },
+  { key: "dnssec", label: "DNSSEC validation" },
+  { key: "ecs", label: "ECS (faster CDN routing)" },
+];
+---
+
+<figure class="dns-widget dns-digit" aria-label="Quad9 address variants compared" data-modes={JSON.stringify(MODES)}>
+  <div class="dns-digit-addr">
+    <span class="dns-digit-base">9.9.9.</span><!--
+ --><span class="dns-digit-switch" role="tablist" aria-label="Last octet">
+      {MODES.map((m, i) => (
+        <button type="button" role="tab" aria-selected={String(i === 0)} data-i={i}>{m.digit}</button>
+      ))}
+    </span>
+  </div>
+
+  <ul class="dns-digit-rows">
+    {ROWS.map((r) => (
+      <li data-row={r.key} data-on={String(MODES[0].features[r.key as keyof typeof MODES[0]["features"]])}>
+        <span class="dns-digit-dot" aria-hidden="true"></span>
+        {r.label}
+        <span class="dns-digit-state"></span>
+      </li>
+    ))}
+  </ul>
+
+  <p class="dns-digit-blurb">{MODES[0].blurb}</p>
+</figure>
+
+<style>
+  .dns-digit {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem 1.35rem;
+  }
+  .dns-digit-addr {
+    font-family: var(--font-mono);
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
+  .dns-digit-switch {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+  .dns-digit-switch button {
+    font: 600 1.15rem var(--font-mono);
+    min-width: 2.6rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+  }
+  .dns-digit-switch button[aria-selected="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .dns-digit-rows {
+    list-style: none;
+    padding: 0;
+    margin: 1.1rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .dns-digit-rows li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: opacity var(--duration-fast) var(--ease-smooth);
+  }
+  .dns-digit-rows li[data-on="false"] {
+    opacity: 0.45;
+  }
+  .dns-digit-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    transition: background var(--duration-fast) var(--ease-smooth);
+  }
+  li[data-on="false"] .dns-digit-dot {
+    background: var(--color-gray-400);
+  }
+  .dns-digit-state {
+    margin-left: auto;
+    font: 600 0.7rem var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  li[data-on="true"] .dns-digit-state::after { content: "on"; color: var(--accent); }
+  li[data-on="false"] .dns-digit-state::after { content: "off"; color: var(--muted); }
+  .dns-digit-blurb {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin: 1rem 0 0;
+    min-height: 2.6em;
+    line-height: 1.55;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".dns-digit").forEach((root) => {
+    const modes = JSON.parse(root.dataset.modes!);
+    const buttons = root.querySelectorAll<HTMLButtonElement>("[data-i]");
+    const blurb = root.querySelector<HTMLElement>(".dns-digit-blurb")!;
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const mode = modes[Number(btn.dataset.i)];
+        buttons.forEach((b) => b.setAttribute("aria-selected", String(b === btn)));
+        root.querySelectorAll<HTMLElement>("[data-row]").forEach((row) => {
+          row.dataset.on = String(mode.features[row.dataset.row!]);
+        });
+        blurb.textContent = mode.blurb;
+      }),
+    );
+  });
+</script>

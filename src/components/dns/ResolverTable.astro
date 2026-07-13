@@ -1,0 +1,97 @@
+---
+/**
+ * The comparison table with click-to-copy addresses: the whole point
+ * of the page is walking away with an IP on your clipboard.
+ */
+const RESOLVERS = [
+  { addr: "1.1.1.1", who: "Cloudflare", blocks: "Nothing. Fastest almost everywhere", alt: "1.0.0.1" },
+  { addr: "1.1.1.2", who: "Cloudflare", blocks: "Malware", alt: "1.0.0.2" },
+  { addr: "1.1.1.3", who: "Cloudflare", blocks: "Malware + adult", alt: "1.0.0.3" },
+  { addr: "8.8.8.8", who: "Google", blocks: "Nothing. Google-grade logging", alt: "8.8.4.4" },
+  { addr: "9.9.9.9", who: "Quad9", blocks: "Malware. Swiss non-profit, no logging", alt: "149.112.112.112" },
+  { addr: "9.9.9.10", who: "Quad9", blocks: "Nothing. “For experts only”", alt: "149.112.112.10" },
+  { addr: "9.9.9.11", who: "Quad9", blocks: "Malware, + ECS for faster CDN routing", alt: "149.112.112.11" },
+  { addr: "94.140.14.14", who: "AdGuard", blocks: "Ads + trackers + malware", alt: "94.140.15.15" },
+];
+---
+
+<figure class="dns-widget dns-table" aria-label="Public DNS resolvers compared">
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Who</th><th>Blocks</th><th>Secondary</th></tr>
+    </thead>
+    <tbody>
+      {RESOLVERS.map((r) => (
+        <tr>
+          <td><button type="button" class="dns-copy" data-copy={r.addr} title="Copy">{r.addr}</button></td>
+          <td>{r.who}</td>
+          <td class="dns-table-blocks">{r.blocks}</td>
+          <td><button type="button" class="dns-copy" data-copy={r.alt} title="Copy">{r.alt}</button></td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+  <figcaption>Click any address to copy it.</figcaption>
+</figure>
+
+<style>
+  .dns-table {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    overflow-x: auto;
+  }
+  .dns-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .dns-table th {
+    text-align: left;
+    font: 600 0.7rem var(--font-sans);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 0 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .dns-table td {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    vertical-align: baseline;
+  }
+  .dns-table-blocks {
+    color: var(--text-secondary);
+  }
+  .dns-copy {
+    font: 500 0.85rem var(--font-mono);
+    color: var(--accent-soft);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: copy;
+    white-space: nowrap;
+    border-bottom: 1px dashed transparent;
+    transition: border-color var(--duration-fast) var(--ease-smooth);
+  }
+  .dns-copy:hover {
+    border-bottom-color: currentColor;
+  }
+  .dns-copy.copied::after {
+    content: " ✓";
+  }
+  .dns-table figcaption {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.6rem;
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>(".dns-copy").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(btn.dataset.copy!);
+      btn.classList.add("copied");
+      setTimeout(() => btn.classList.remove("copied"), 1200);
+    }),
+  );
+</script>

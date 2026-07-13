@@ -1,0 +1,117 @@
+---
+title: "WiFi IONIS setup"
+description: "Connect to the IONIS network on Linux and Android"
+date: 2025-09-08T11:14:36-04:00
+updated: 2026-07-13
+categories: ["notes"]
+tags: ["wifi", "epita", "enterprise-wifi", "linux", "android", "networking"]
+---
+
+IONIS is EPITA's campus WiFi, and it is just eduroam under another name: the same settings and credentials work on any `eduroam` SSID at any participating university. Login is your EPITA email plus your IONIS (Microsoft) password, no CA certificate. It only broadcasts on 5 GHz: if the SSID does not show up, blame your WiFi card, not your config. Official doc: [docs.forge.epita.fr](https://docs.forge.epita.fr/epita/environment/from-school/wifi).
+
+## Pixel / Android (GrapheneOS)
+
+**Settings** > **Network & internet** > **Internet** > tap **IONIS**, then fill it in exactly like this:
+
+<SettingsDialog
+  title="IONIS"
+  rows={[
+    { label: 'EAP method', value: 'PEAP', kind: 'select' },
+    { label: 'Phase 2 authentication', value: 'MSCHAPV2', kind: 'select' },
+    { label: 'CA certificate', value: 'Trust on First Use', kind: 'select' },
+    { label: 'Identity', value: 'first.name@epita.fr', kind: 'input' },
+    { label: 'Anonymous identity', value: 'first.name@epita.fr', kind: 'input' },
+    { label: 'Password', value: '', kind: 'password' },
+  ]}
+  button="Connect"
+/>
+
+* On first connect, a modal shows the server certificate: tap **Trust**. That is the Trust on First Use step ("Do not validate" no longer exists on modern Android).
+* Anonymous identity is required on a recent Pixel: your email, same as Identity. Only on Android 13 and older use `anonymous` or leave it empty.
+* If it fails: forget the network and start over. Android does not retry cleanly on a broken saved profile.
+
+## Linux: NetworkManager (GUI)
+
+Default on Ubuntu, Fedora, and GNOME in general. Click IONIS and the dialog should end up like this:
+
+<SettingsDialog
+  title="Wi-Fi Network Authentication Required"
+  subtitle="Authentication required by IONIS"
+  rows={[
+    { label: 'Security', value: 'WPA & WPA2 Enterprise', kind: 'select' },
+    { label: 'Authentication', value: 'Protected EAP (PEAP)', kind: 'select' },
+    { label: 'CA certificate', value: 'No CA certificate is required', kind: 'check' },
+    { label: 'Inner authentication', value: 'MSCHAPv2', kind: 'select' },
+    { label: 'Username', value: 'first.name@epita.fr', kind: 'input' },
+    { label: 'Password', value: '', kind: 'password' },
+  ]}
+  button="Connect"
+/>
+
+## Linux: NetworkManager (CLI)
+
+No GUI? Use nmcli (nmtui has no EAP fields, it cannot set up enterprise networks). The whole connection in one command:
+
+```bash
+nmcli connection add type wifi con-name IONIS ifname wlan0 ssid IONIS \
+  wifi-sec.key-mgmt wpa-eap 802-1x.eap peap 802-1x.phase2-auth mschapv2 \
+  802-1x.identity "first.name@epita.fr" 802-1x.password "your-ionis-password"
+```
+
+## Linux: iwd / impala (Omarchy, Arch)
+
+impala handles 802.1X directly: select **IONIS**, enter email and password, done.
+
+Bare iwd needs the profile by hand. Create `/var/lib/iwd/IONIS.8021x`:
+
+```ini
+[Security]
+EAP-Method=PEAP
+EAP-Identity=first.name@epita.fr
+EAP-PEAP-Phase2-Method=MSCHAPV2
+EAP-PEAP-Phase2-Identity=first.name@epita.fr
+EAP-PEAP-Phase2-Password=your-ionis-password
+
+[Settings]
+Autoconnect=true
+```
+
+Then restart iwd and connect:
+
+```bash
+sudo systemctl restart iwd
+iwctl station wlan0 connect IONIS
+```
+
+## Linux: netctl (Arch)
+
+Create `/etc/netctl/wlan0-IONIS`:
+
+```bash
+Description='IONIS Wifi'
+Interface=wlan0
+Connection=wireless
+Security=wpa-configsection
+IP=dhcp
+WPAConfigSection=(
+  'ssid="IONIS"'
+  'key_mgmt=WPA-EAP'
+  'eap=PEAP'
+  'identity="first.name@epita.fr"'
+  'password="your-ionis-password"'
+  'phase2="auth=MSCHAPV2"'
+)
+```
+
+```bash
+sudo netctl enable wlan0-IONIS
+sudo netctl start wlan0-IONIS
+```
+
+## iPhone
+
+Tap IONIS, enter your email and password, then tap **Trust** on the certificate warning.
+
+<Callout type="note" title="Authentication loops on recent Linux distros">
+The network's RADIUS server uses legacy TLS, which recent OpenSSL versions reject by default. If your credentials are correct but authentication keeps failing, this is the likely cause; see the [official doc](https://docs.forge.epita.fr/epita/environment/from-school/wifi) for the current workaround.
+</Callout>

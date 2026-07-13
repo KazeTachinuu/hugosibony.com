@@ -1,0 +1,366 @@
+---
+/*
+  RISCy Business disassembler + VM. Paste the server's real mapping JSON and a
+  bytecode hex, decode by that mapping, and step the program watching the
+  registers / flags / stack / PC. "remélanger" reshuffles the opcodes like a new
+  server session: same program, different bytes, same result. Pure client JS,
+  identical semantics to the writeup solver.
+*/
+---
+
+<div class="vm not-prose" data-vm>
+  <span class="vm-eyebrow">désassembleur + vm / protocole réel</span>
+
+  <label class="vm-field">
+    <span class="vm-field-label">mapping du serveur (json)</span>
+    <textarea class="vm-map" data-vm-map spellcheck="false" rows="3"></textarea>
+  </label>
+
+  <div class="vm-inputs">
+    <label class="vm-field vm-field-hex">
+      <span class="vm-field-label">bytecode (hex)</span>
+      <input class="vm-hex" data-vm-hex spellcheck="false" autocomplete="off" />
+    </label>
+    <button class="vm-btn vm-btn-primary" type="button" data-vm-decode>décoder</button>
+    <button class="vm-btn" type="button" data-vm-shuffle title="Réassigne des opcodes aléatoires, comme une nouvelle session">remélanger</button>
+  </div>
+
+  <div class="vm-examples">
+    <span class="vm-examples-label">exemples</span>
+    <button class="vm-ex" type="button" data-vm-ex="add" data-active>addition</button>
+    <button class="vm-ex" type="button" data-vm-ex="mul">multiplication</button>
+    <button class="vm-ex" type="button" data-vm-ex="xor">xor swap</button>
+    <button class="vm-ex" type="button" data-vm-ex="fib">fibonacci</button>
+    <button class="vm-ex" type="button" data-vm-ex="fact">factorielle</button>
+    <button class="vm-ex" type="button" data-vm-ex="stack">pile</button>
+  </div>
+
+  <p class="vm-error" data-vm-error hidden></p>
+
+  <div class="vm-bytes" data-vm-bytes></div>
+
+  <div class="vm-grid">
+    <div class="vm-panel vm-disasm">
+      <div class="vm-panel-title">désassemblage</div>
+      <ol class="vm-asm" data-vm-asm></ol>
+    </div>
+    <div class="vm-panel vm-state">
+      <div class="vm-panel-title">registres</div>
+      <div class="vm-regs" data-vm-regs></div>
+      <div class="vm-flags">
+        <span class="vm-flag" data-vm-zf>ZF <b>0</b></span>
+        <span class="vm-flag" data-vm-sp>SP <b>255</b></span>
+        <span class="vm-flag" data-vm-pc>PC <b>0</b></span>
+      </div>
+      <div class="vm-stack-wrap">
+        <div class="vm-panel-title vm-panel-title-sm">pile (haut de la mémoire)</div>
+        <div class="vm-stack" data-vm-stack></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vm-controls">
+    <button class="vm-btn" type="button" data-vm-reset>reset</button>
+    <button class="vm-btn" type="button" data-vm-step>étape</button>
+    <button class="vm-btn vm-btn-primary" type="button" data-vm-run>exécuter</button>
+    <span class="vm-status" data-vm-status></span>
+  </div>
+</div>
+
+<style is:global>
+  .vm {
+    margin: 2rem 0; border: 1px solid var(--border); background: var(--code-bg);
+    padding: 1.2rem; font-size: 0.82rem;
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+  .vm * { border-radius: 0; }
+  .vm-eyebrow {
+    display: block; font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.9rem;
+  }
+
+  .vm-field { display: block; margin-bottom: 0.7rem; }
+  .vm-field-label { display: block; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; margin-bottom: 0.3rem; }
+  .vm-map, .vm-hex {
+    width: 100%; font-family: inherit; font-size: 0.76rem; color: inherit;
+    background: color-mix(in oklch, var(--page-text) 4%, transparent);
+    border: 1px solid var(--border); padding: 0.55rem 0.65rem; line-height: 1.6;
+  }
+  .vm-map { resize: none; overflow: hidden; word-break: break-word; }
+  .vm-map:focus, .vm-hex:focus { outline: none; border-color: var(--accent); }
+  .vm-inputs { display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  .vm-field-hex { flex: 1; min-width: 180px; margin-bottom: 0; }
+
+  .vm-examples { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .vm-examples-label { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.45; }
+
+  .vm-error { margin: 0 0 0.9rem; padding: 0.5rem 0.7rem; font-size: 0.76rem; color: #ef4444; border: 1px solid color-mix(in oklch, #ef4444 45%, var(--border)); }
+  .vm-error[hidden] { display: none; }
+
+  .vm-bytes {
+    display: flex; flex-wrap: wrap; gap: 3px; padding: 0.7rem 0.75rem; margin-bottom: 1rem;
+    border: 1px solid var(--border); font-size: 0.8rem;
+  }
+  .vm-byte { padding: 0.05em 0.3em; opacity: 0.45; transition: color 0.15s ease, background 0.15s ease, opacity 0.15s ease; }
+  .vm-byte[data-cur] { opacity: 1; background: var(--accent); color: #fff; }
+
+  .vm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: -1px; }
+  .vm-grid { gap: 0; }
+  .vm-grid > .vm-panel + .vm-panel { border-left: 0; }
+  @media (max-width: 620px) { .vm-grid { grid-template-columns: 1fr; } .vm-grid > .vm-panel + .vm-panel { border-left: 1px solid var(--border); border-top: 0; } }
+  .vm-panel { border: 1px solid var(--border); padding: 0.8rem 0.9rem; }
+  .vm-panel-title { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.45; margin-bottom: 0.6rem; }
+  .vm-panel-title-sm { margin-top: 0.9rem; }
+
+  .vm-asm { list-style: none; margin: 0; padding: 0; font-size: 0.78rem; }
+  .vm-asm li { padding: 0.22em 0.5em; white-space: nowrap; opacity: 0.75; transition: opacity 0.15s ease, background 0.15s ease; }
+  .vm-asm li[data-cur] { opacity: 1; background: color-mix(in oklch, var(--accent) 14%, transparent); box-shadow: inset 2px 0 0 var(--accent); }
+  .vm-asm li[data-done] { opacity: 0.4; }
+  /* syntax highlighting, theme-aware */
+  .vm-asm .t-op { color: var(--accent); display: inline-block; min-width: 4.7em; }
+  .vm-asm .t-reg { color: #0e7490; }
+  .vm-asm .t-num { color: #b45309; }
+  .vm-asm .t-punct { opacity: 0.4; }
+  .vm-asm .t-err { color: #ef4444; }
+  .dark .vm-asm .t-reg { color: #38bdf8; }
+  .dark .vm-asm .t-num { color: #fbbf24; }
+  .vm-byte.t-opbyte:not([data-cur]) { color: var(--accent); opacity: 0.85; }
+
+  .vm-regs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+  .vm-reg { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0.45rem 0.2rem; border: 1px solid var(--border); }
+  .vm-reg span { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.03em; color: var(--accent); opacity: 0.8; }
+  .vm-reg b { font-size: 0.95rem; font-weight: 700; }
+  .vm-reg[data-changed] { animation: vm-flash 0.5s ease; }
+  @keyframes vm-flash { 0% { background: var(--accent); color: #fff; } 100% { background: transparent; } }
+
+  .vm-flags { display: flex; gap: 0.4rem; margin-top: 0.7rem; flex-wrap: wrap; }
+  .vm-flag { font-size: 0.68rem; padding: 0.2rem 0.5rem; opacity: 0.75; border: 1px solid var(--border); }
+  .vm-flag b { color: var(--accent); }
+
+  .vm-stack { display: flex; gap: 3px; font-size: 0.68rem; }
+  .vm-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0.32rem 0.35rem; min-width: 30px; border: 1px solid var(--border); }
+  .vm-cell span { font-size: 0.56rem; font-weight: 600; opacity: 0.6; }
+  .vm-cell[data-sp] { box-shadow: inset 0 -2px 0 var(--accent); }
+  .vm-cell[data-changed] { animation: vm-flash 0.5s ease; }
+
+  .vm-controls { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+  .vm-status { font-size: 0.72rem; opacity: 0.6; margin-left: auto; }
+
+  /* Brutalist buttons: square, bordered, monospace, flat. */
+  .vm-btn, .vm-ex {
+    font: inherit; font-size: 0.74rem; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+    padding: 0.42rem 0.85rem; border: 1px solid var(--border); background: none; color: inherit;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  }
+  .vm-ex { padding: 0.3rem 0.7rem; font-size: 0.68rem; }
+  .vm-btn:hover:not(:disabled), .vm-ex:hover { border-color: var(--accent); }
+  .vm-btn:disabled { opacity: 0.3; cursor: default; }
+  .vm-btn-primary, .vm-ex[data-active] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .vm-btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+
+  @media (prefers-reduced-motion: reduce) { .vm-reg[data-changed], .vm-cell[data-changed] { animation: none; } }
+</style>
+
+<script>
+  type Ins = [string, string, string?];
+
+  const SPEC: Record<string, number> = {
+    MOV_IMM: 3, MOV_REG: 3, ADD_IMM: 3, ADD_REG: 3, SUB_IMM: 3, SUB_REG: 3, MUL_REG: 3,
+    XOR_REG: 3, AND_REG: 3, OR_REG: 3, NOT_REG: 2, SHL_IMM: 3, SHR_IMM: 3, CMP_REG: 3,
+    JMP_REL: 2, JZ_REL: 2, JNZ_REL: 2, LDR_MEM: 3, STR_MEM: 3, PUSH: 2, POP: 2,
+  };
+  const DEFAULT_OPS: Record<string, number> = {
+    MOV_IMM: 52, MOV_REG: 229, ADD_IMM: 59, ADD_REG: 109, SUB_IMM: 43, SUB_REG: 20, MUL_REG: 26,
+    XOR_REG: 181, AND_REG: 169, OR_REG: 173, NOT_REG: 66, SHL_IMM: 222, SHR_IMM: 240, CMP_REG: 211,
+    JMP_REL: 45, JZ_REL: 170, JNZ_REL: 116, LDR_MEM: 61, STR_MEM: 76, PUSH: 154, POP: 62,
+  };
+  // Ported from the learn tool's examples.py. JNZ offsets precomputed.
+  const EXAMPLES: Record<string, Ins[]> = {
+    add: [['MOV_IMM', 'R0', '25'], ['ADD_IMM', 'R0', '37'], ['ADD_IMM', 'R0', '18']],
+    mul: [['MOV_IMM', 'R0', '7'], ['MOV_IMM', 'R1', '8'], ['MUL_REG', 'R0', 'R1']],
+    xor: [['MOV_IMM', 'R0', '42'], ['MOV_IMM', 'R1', '99'], ['XOR_REG', 'R0', 'R1'], ['XOR_REG', 'R1', 'R0'], ['XOR_REG', 'R0', 'R1']],
+    fib: [['MOV_IMM', 'R0', '0'], ['MOV_IMM', 'R1', '1'], ['MOV_IMM', 'R2', '6'], ['MOV_IMM', 'R3', '0'],
+      ['MOV_REG', 'R4', 'R1'], ['ADD_REG', 'R1', 'R0'], ['MOV_REG', 'R0', 'R4'], ['SUB_IMM', 'R2', '1'], ['CMP_REG', 'R2', 'R3'], ['JNZ_REL', '-17']],
+    fact: [['MOV_IMM', 'R0', '1'], ['MOV_IMM', 'R1', '5'], ['MOV_IMM', 'R2', '1'],
+      ['MUL_REG', 'R0', 'R1'], ['SUB_IMM', 'R1', '1'], ['CMP_REG', 'R1', 'R2'], ['JNZ_REL', '-11']],
+    stack: [['MOV_IMM', 'R0', '10'], ['MOV_IMM', 'R1', '20'], ['MOV_IMM', 'R2', '30'], ['PUSH', 'R0'], ['PUSH', 'R1'], ['PUSH', 'R2'], ['POP', 'R0'], ['POP', 'R1'], ['POP', 'R2']],
+  };
+
+  const regNum = (s: string) => parseInt(s.replace('R', ''), 10);
+  const signed8 = (v: number) => (v & 0x80 ? v - 256 : v);
+  const hex2 = (n: number) => n.toString(16).padStart(2, '0');
+
+  const opsToJSON = (ops: Record<string, number>) =>
+    '{' + Object.keys(SPEC).map((k) => `"${k}": [${ops[k]}, ${SPEC[k]}]`).join(', ') + '}';
+  function shuffledOps(): Record<string, number> {
+    const pool = Array.from({ length: 240 }, (_, i) => i + 16);
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const ops: Record<string, number> = {};
+    Object.keys(SPEC).forEach((k, i) => (ops[k] = pool[i]));
+    return ops;
+  }
+  function parseMapping(text: string) {
+    const obj = JSON.parse(text);
+    const opName: Record<number, string> = {}, opSize: Record<number, number> = {}, ops: Record<string, number> = {};
+    for (const k in obj) { const [op, size] = obj[k]; opName[op] = k; opSize[op] = size; ops[k] = op; }
+    return { opName, opSize, ops };
+  }
+  function assemble(prog: Ins[], ops: Record<string, number>): number[] {
+    const out: number[] = [];
+    for (const [op, a, b] of prog) {
+      out.push(ops[op]);
+      if (SPEC[op] === 3) { out.push(regNum(a) & 7); out.push(b!.startsWith('R') ? regNum(b) : Number(b) & 0xff); }
+      else { out.push(a.startsWith('R') ? regNum(a) : Number(a) & 0xff); }
+    }
+    return out;
+  }
+  // Build a syntax-highlighted disassembly row: mnemonic / register / immediate.
+  function tokRow(name: string | null, size: number, code: number[], pc: number): string {
+    if (!name) return `<span class="t-err">??? (0x${hex2(code[pc])})</span>`;
+    const ops: string[] = [];
+    if (size === 3) {
+      ops.push(`<span class="t-reg">R${code[pc + 1] & 7}</span>`);
+      const raw = code[pc + 2];
+      ops.push(name.endsWith('REG') ? `<span class="t-reg">R${raw & 7}</span>` : `<span class="t-num">${raw}</span>`);
+    } else if (name.endsWith('REL')) {
+      const o = signed8(code[pc + 1]);
+      ops.push(`<span class="t-num">${o >= 0 ? '+' : ''}${o}</span>`);
+    } else {
+      ops.push(`<span class="t-reg">R${code[pc + 1] & 7}</span>`);
+    }
+    return `<span class="t-op">${name}</span>` + ops.join('<span class="t-punct">, </span>');
+  }
+  function disasm(code: number[], opName: Record<number, string>, opSize: Record<number, number>) {
+    const rows: { pc: number; html: string }[] = [];
+    let pc = 0;
+    while (pc < code.length) {
+      const name = opName[code[pc]];
+      if (!name) { rows.push({ pc, html: tokRow(null, 0, code, pc) }); pc++; continue; }
+      const size = opSize[code[pc]];
+      rows.push({ pc, html: tokRow(name, size, code, pc) });
+      pc += size;
+    }
+    return rows;
+  }
+  function step(state: any, code: number[], opName: Record<number, string>, opSize: Record<number, number>) {
+    const { reg, mem } = state;
+    let { sp, pc, zf } = state;
+    let changedReg = -1, changedCell = -1;
+    const name = opName[code[pc]];
+    if (!name) { state.pc = pc + 1; return { changedReg, changedCell }; }
+    const size = opSize[code[pc]];
+    const rd = code[pc + 1] & 7;
+    const imm = size === 3 ? code[pc + 2] : code[pc + 1];
+    const rs = imm & 7;
+    switch (name) {
+      case 'MOV_IMM': reg[rd] = imm; changedReg = rd; break;
+      case 'MOV_REG': reg[rd] = reg[rs]; changedReg = rd; break;
+      case 'ADD_IMM': reg[rd] = (reg[rd] + imm) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'ADD_REG': reg[rd] = (reg[rd] + reg[rs]) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'SUB_IMM': reg[rd] = (reg[rd] - imm) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'SUB_REG': reg[rd] = (reg[rd] - reg[rs]) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'MUL_REG': reg[rd] = (reg[rd] * reg[rs]) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'XOR_REG': reg[rd] ^= reg[rs]; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'AND_REG': reg[rd] &= reg[rs]; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'OR_REG': reg[rd] |= reg[rs]; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'NOT_REG': reg[rd] = ~reg[rd] & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'SHL_IMM': reg[rd] = (reg[rd] << (imm & 7)) & 0xff; zf = reg[rd] === 0; changedReg = rd; break;
+      case 'SHR_IMM': reg[rd] = reg[rd] >> (imm & 7); zf = reg[rd] === 0; changedReg = rd; break;
+      case 'CMP_REG': zf = reg[rd] === reg[rs]; break;
+      case 'LDR_MEM': reg[rd] = mem[reg[rs]]; changedReg = rd; break;
+      case 'STR_MEM': mem[reg[rs]] = reg[rd]; changedCell = reg[rs]; break;
+      case 'PUSH': mem[sp] = reg[rd]; changedCell = sp; sp = (sp - 1) & 0xff; break;
+      case 'POP': sp = (sp + 1) & 0xff; reg[rd] = mem[sp]; changedReg = rd; break;
+      case 'JMP_REL': state.pc = pc + size + signed8(imm); return { changedReg, changedCell };
+      case 'JZ_REL': if (zf) { state.pc = pc + size + signed8(imm); return { changedReg, changedCell }; } break;
+      case 'JNZ_REL': if (!zf) { state.pc = pc + size + signed8(imm); state.zf = zf; return { changedReg, changedCell }; } break;
+    }
+    state.sp = sp; state.zf = zf; state.pc = pc + size;
+    return { changedReg, changedCell };
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-vm]').forEach((root) => {
+    const $ = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+    const mapEl = $<HTMLTextAreaElement>('[data-vm-map]');
+    const hexEl = $<HTMLInputElement>('[data-vm-hex]');
+    const bytesEl = $('[data-vm-bytes]'), asmEl = $('[data-vm-asm]'), regsEl = $('[data-vm-regs]'), stackEl = $('[data-vm-stack]');
+    const zfEl = $('[data-vm-zf]').querySelector('b')!, spEl = $('[data-vm-sp]').querySelector('b')!, pcEl = $('[data-vm-pc]').querySelector('b')!;
+    const statusEl = $('[data-vm-status]'), errEl = $('[data-vm-error]');
+    const stepBtn = $<HTMLButtonElement>('[data-vm-step]'), runBtn = $<HTMLButtonElement>('[data-vm-run]');
+
+    let ops = { ...DEFAULT_OPS };
+    let code: number[] = [], rows: { pc: number; html: string }[] = [];
+    let opName: Record<number, string> = {}, opSize: Record<number, number> = {};
+    let state: any, timer: number | null = null;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const fresh = () => ({ reg: new Array(8).fill(0), mem: new Array(256).fill(0), sp: 255, pc: 0, zf: false });
+    const codeHex = (c: number[]) => c.map(hex2).join('');
+    const err = (msg: string | null) => { if (msg) { errEl.textContent = msg; errEl.hidden = false; } else errEl.hidden = true; };
+    const autosize = () => { mapEl.style.height = 'auto'; mapEl.style.height = mapEl.scrollHeight + (mapEl.offsetHeight - mapEl.clientHeight) + 'px'; };
+
+    function decode() {
+      stop();
+      let tables;
+      try { tables = parseMapping(mapEl.value); } catch { err('mapping json invalide'); return; }
+      opName = tables.opName; opSize = tables.opSize;
+      const hex = hexEl.value.replace(/\s+/g, '');
+      if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2) { err('bytecode hex invalide'); return; }
+      err(null);
+      code = hex.match(/../g)?.map((b) => parseInt(b, 16)) ?? [];
+      rows = disasm(code, opName, opSize);
+      state = fresh();
+      const opPos = new Set(rows.map((r) => r.pc));
+      bytesEl.innerHTML = code.map((b, i) => `<span class="vm-byte${opPos.has(i) ? ' t-opbyte' : ''}" data-i="${i}">${hex2(b)}</span>`).join('');
+      asmEl.innerHTML = rows.map((r) => `<li data-pc="${r.pc}">${r.html}</li>`).join('');
+      render(-1, -1);
+      statusEl.textContent = 'prêt';
+    }
+
+    function render(changedReg: number, changedCell: number) {
+      regsEl.innerHTML = state.reg.map((v: number, i: number) => `<div class="vm-reg"${i === changedReg ? ' data-changed' : ''}><span>R${i}</span><b>${v}</b></div>`).join('');
+      zfEl.textContent = state.zf ? '1' : '0'; spEl.textContent = String(state.sp); pcEl.textContent = String(state.pc);
+      stackEl.innerHTML = Array.from({ length: 6 }, (_, k) => {
+        const addr = 255 - k, isSp = addr === state.sp, flash = addr === changedCell;
+        return `<div class="vm-cell"${isSp ? ' data-sp' : ''}${flash ? ' data-changed' : ''}><span>${addr}</span>${state.mem[addr]}</div>`;
+      }).join('');
+      const done = state.pc >= code.length;
+      asmEl.querySelectorAll<HTMLElement>('li').forEach((li) => { const pc = Number(li.dataset.pc); li.toggleAttribute('data-cur', !done && pc === state.pc); li.toggleAttribute('data-done', done); });
+      bytesEl.querySelectorAll<HTMLElement>('.vm-byte').forEach((el) => { const i = Number(el.dataset.i); const size = done ? 0 : opSize[code[state.pc]] ?? 1; el.toggleAttribute('data-cur', !done && i >= state.pc && i < state.pc + size); });
+      stepBtn.disabled = done || !code.length; runBtn.disabled = done || !code.length;
+      if (done && code.length) statusEl.textContent = `R0 = ${state.reg[0]}`;
+    }
+
+    const one = () => { if (!state || state.pc >= code.length) return false; const c = step(state, code, opName, opSize); render(c.changedReg, c.changedCell); return state.pc < code.length; };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; runBtn.textContent = 'exécuter'; } };
+    const loadExample = (key: string) => { hexEl.value = codeHex(assemble(EXAMPLES[key], ops)); decode(); };
+    const clearActive = () => root.querySelectorAll('.vm-ex').forEach((b) => b.removeAttribute('data-active'));
+
+    stepBtn.addEventListener('click', () => { stop(); one(); });
+    runBtn.addEventListener('click', () => {
+      if (timer) { stop(); return; }
+      if (!state || state.pc >= code.length) return;
+      runBtn.textContent = 'pause';
+      timer = window.setInterval(() => { if (!one()) stop(); }, reduce ? 60 : 420);
+    });
+    $('[data-vm-reset]').addEventListener('click', decode);
+    $('[data-vm-decode]').addEventListener('click', decode);
+    hexEl.addEventListener('change', () => { clearActive(); decode(); });
+    mapEl.addEventListener('change', decode);
+    mapEl.addEventListener('input', autosize);
+    $('[data-vm-shuffle]').addEventListener('click', () => {
+      ops = shuffledOps();
+      mapEl.value = opsToJSON(ops);
+      autosize();
+      const active = root.querySelector<HTMLElement>('.vm-ex[data-active]')?.dataset.vmEx;
+      if (active) hexEl.value = codeHex(assemble(EXAMPLES[active], ops));
+      decode();
+    });
+    root.querySelectorAll<HTMLElement>('.vm-ex').forEach((btn) => {
+      btn.addEventListener('click', () => { clearActive(); btn.setAttribute('data-active', ''); loadExample(btn.dataset.vmEx!); });
+    });
+
+    mapEl.value = opsToJSON(ops);
+    loadExample('add');
+    autosize();
+  });
+</script>

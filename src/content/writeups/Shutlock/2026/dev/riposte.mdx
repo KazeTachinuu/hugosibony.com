@@ -1,0 +1,155 @@
+---
+title: "RIPOSTE"
+categories: "Dev"
+cat: "chal"
+ctf: "Shutlock"
+solved: true
+date: 2026-07-07T00:00:00Z
+updated: 2026-07-13
+draft: false
+description: "Le Cube de Kociemba est de mauvaise humeur. Il n'a pas envie d'être résolu, et il riposte."
+difficulty: "⭐⭐"
+---
+
+> Le Cube de Kociemba est de mauvaise humeur aujourd'hui.
+>
+> Il n'a pas envie d'être résolu. Attention, il riposte.
+
+<Callout type="info" title="Le challenge">
+
+Le serveur envoie l'état d'un cube mélangé et attend qu'on le résolve, coup par coup.
+
+```
+$ nc <ip> <port>
+==================================================
+RIPOSTE - Le Cube de Kociemba
+==================================================
+Notation: U R F D L B (avec ' et 2)
+==================================================
+
+STATE 032145032145032145032145032145032145
+
+>
+```
+
+Indice dans la bannière : Kociemba, l'algorithme de résolution et sa lib Python.
+
+</Callout>
+
+<RiposteInverter />
+
+<Callout type="note" title="Décoder l'état">
+
+`STATE` donne 54 chiffres, soit 6 faces de 9 stickers, dans l'ordre standard Kociemba :
+
+| Chiffre | Face |
+|---------|------|
+| 0 | U (Up) |
+| 1 | R (Right) |
+| 2 | F (Front) |
+| 3 | D (Down) |
+| 4 | L (Left) |
+| 5 | B (Back) |
+
+La lib `kociemba` (`pip install kociemba`) attend les lettres, donc la conversion tient en une ligne :
+
+```python
+import kociemba
+
+DIGIT_TO_FACE = "URFDLB"          # 0=U 1=R 2=F 3=D 4=L 5=B
+cube_str = "".join(DIGIT_TO_FACE[int(d)] for d in state)
+solution = kociemba.solve(cube_str)   # "U F L2 F2 U' ... D" (18 à 25 coups)
+```
+
+</Callout>
+
+<Callout type="warn" title="Le piège : les ripostes">
+
+Au bout de quelques coups, le serveur riposte :
+
+```
+> L2
+RIPOSTE U2 R' R
+```
+
+Régulièrement (1 à 3 contre-coups, tous les 1 à 4 coups), le serveur ajoute ses propres mouvements après les nôtres, ce qui nous écarte de la solution. Et les coups qu'on envoie pour annuler une riposte peuvent en déclencher une nouvelle : les ripostes s'enchaînent en cascade.
+
+</Callout>
+
+<Callout type="tip" title="Contre : inverser dans l'ordre inverse">
+
+Pour annuler une séquence, on applique les inverses dans l'ordre inverse, comme n'importe quel algo de Rubik's. `RIPOSTE U2 R' R` s'annule avec `R'`, puis `R`, puis `U2`.
+
+Inverser un coup :
+
+```python
+def invert(move):
+    if move.endswith("'"): return move[0]    # R'  -> R
+    if move.endswith("2"): return move       # R2  -> R2 (auto-inverse)
+    return move + "'"                         # R   -> R'
+```
+
+Comme un contre-coup peut lui-même être riposté, on gère ça par récursion : on lit la réponse après chaque coup et on traite la riposte avant de continuer.
+
+```python
+import re
+import kociemba
+from pwn import remote, context
+context.log_level = "error"
+
+DIGIT_TO_FACE = "URFDLB"          # 0=U 1=R 2=F 3=D 4=L 5=B
+
+def send_move(io, move, depth=0):
+    print(f"{'  ' * depth}> {move}")
+    io.sendline(move.encode())
+    try:
+        data = io.recvuntil(b"> ", timeout=10).decode()
+    except EOFError:                                  # cube résolu : plus de prompt
+        data = io.recvall(timeout=2).decode()
+
+    if match := re.search(r"SHLK\{[^}]+\}", data):    # flag trouvé
+        return match.group(0)
+
+    if match := re.search(r"RIPOSTE (.+)", data):     # contre-attaque
+        riposte_moves = match.group(1).split()
+        print(f"{'  ' * depth}< RIPOSTE {' '.join(riposte_moves)}")
+        for m in reversed(riposte_moves):             # inverses, ordre inverse
+            if flag := send_move(io, invert(m), depth + 1):
+                return flag
+    return None
+
+def solve(host, port):
+    io = remote(host, port)
+    banner = io.recvuntil(b"> ", timeout=10).decode()
+    state = re.search(r"STATE (\d{54})", banner).group(1)
+
+    cube_str = "".join(DIGIT_TO_FACE[int(d)] for d in state)
+    for move in kociemba.solve(cube_str).split():
+        if flag := send_move(io, move):
+            print(f"\n[+] Flag : {flag}")
+            return
+
+solve("<ip>", <port>)
+```
+
+La récursion traite chaque cascade jusqu'au bout (parfois 10 niveaux ou plus) avant de reprendre la solution principale.
+
+</Callout>
+
+<Callout type="note" title="Pourquoi ça termine toujours">
+
+Une riposte peut en déclencher d'autres, mais la série converge. Une riposte survient avec une probabilité `p = 1/2.5 = 0.4` par coup (une tous les 1 à 4 coups, soit 2.5 en moyenne) et ajoute `r = 2` contre-coups en moyenne (1 à 3). Le nombre de coups nécessaires pour chaque coup voulu vérifie :
+
+```
+E = 1 + p*r*E   =>   E = 1/(1 - p*r) = 1/(1 - 0.8) = 5
+```
+
+`p*r = 0.8 < 1`, donc la série géométrique converge. Une solution de N coups coûte environ 5N coups au total (22 coups font environ 110). Le cube est toujours résoluble en temps fini.
+
+</Callout>
+
+<Callout type="success" title="Flag">
+
+<Flag flag="SHLK{Cub3_Str1k3s_B4ck}" />
+
+</Callout>

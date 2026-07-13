@@ -1,0 +1,39 @@
+---
+import Layout from '~/layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { fmtDateShort } from '~/lib/fmt';
+
+const snippets = (await getCollection('snippets', (e) => import.meta.env.DEV || !e.data.draft)).sort(
+  (a, b) => +new Date(b.data.updated ?? b.data.date) - +new Date(a.data.updated ?? a.data.date),
+);
+---
+
+<Layout title="Snippets" mainClass="max-w-5xl mx-auto px-6 py-20">
+  <header class="snippets-page-header">
+    <h1>Snippets</h1>
+    <p>Short solutions to discrete problems which can be copied and pasted.</p>
+  </header>
+
+  <div class="snippets-table" role="table" aria-label="Snippets">
+    <div class="snippets-table-head" role="row">
+      <span role="columnheader">Name</span>
+      <span role="columnheader">Description</span>
+      <span role="columnheader">Category</span>
+      <span role="columnheader">Last Updated</span>
+    </div>
+    <ul class="snippets-table-body">
+      {snippets.map((s) => (
+        <li role="row">
+          <a href={`/snippets/${s.id}/`}>
+            <span class="snippet-name">{s.data.title}</span>
+            <span class="snippet-desc">{s.data.description}</span>
+            <span class="snippet-category">{s.data.category ?? '·'}</span>
+            <time class="snippet-date" datetime={new Date(s.data.updated ?? s.data.date).toISOString()}>
+              {fmtDateShort(s.data.updated ?? s.data.date)}
+            </time>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Layout>

@@ -1,0 +1,2002 @@
+/*
+ * Page-scoped overrides for /blog/xz-backdoor/.
+ * Imported by src/content/blog/xz-backdoor/index.mdx.
+ *
+ * Semantic colors (per spec §"Voice and aesthetic"):
+ *   --xz-attacker  ember  - JiaT75, malicious commits, encrypted bytes
+ *   --xz-defender  slate  - Lasse Collin, Andres Freund, clean code
+ *   --xz-infra     grey   - autoconf, sshd, libsystemd, distro nodes
+ *
+ * Every widget below pulls its sizes / radii / fade levels from the
+ * token block on .xz-widget. No raw rem/px values for repeating roles.
+ */
+
+:root {
+  --xz-attacker: oklch(58% 0.14 35);
+  --xz-defender: oklch(52% 0.06 250);
+  --xz-infra: oklch(55% 0.02 250);
+  --xz-attacker-bg: color-mix(in oklch, var(--xz-attacker) 12%, transparent);
+  --xz-defender-bg: color-mix(in oklch, var(--xz-defender) 12%, transparent);
+}
+:root.dark {
+  --xz-attacker: oklch(72% 0.16 35);
+  --xz-defender: oklch(75% 0.08 250);
+  --xz-infra: oklch(70% 0.02 250);
+  --xz-attacker-bg: color-mix(in oklch, var(--xz-attacker) 14%, transparent);
+  --xz-defender-bg: color-mix(in oklch, var(--xz-defender) 14%, transparent);
+}
+
+/* Printable report brief: hidden on screen, enabled by xz-print.css. */
+.xz-report-brief {
+  display: none;
+}
+
+/* Opening five-part attack chain. */
+.xz-five {
+  margin: 1.75rem auto 2.25rem;
+  max-width: 760px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 0;
+}
+.xz-five-title {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--xz-attacker);
+}
+.xz-five-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: xz-five;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.xz-five-list li {
+  counter-increment: xz-five;
+  position: relative;
+  padding-top: 1.6rem;
+}
+.xz-five-list li::before {
+  content: counter(xz-five, decimal-leading-zero);
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--xz-defender);
+}
+.xz-five-list strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+  color: var(--page-text);
+  margin-bottom: 0.25rem;
+}
+.xz-five-list span {
+  display: block;
+  font-size: 0.86rem;
+  line-height: 1.42;
+  color: var(--text-secondary);
+}
+.xz-five-list code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  padding: 0.05em 0.25em;
+  border-radius: 3px;
+}
+@media (max-width: 820px) {
+  .xz-five-list { grid-template-columns: 1fr; gap: 0.65rem; }
+  .xz-five-list li { padding-top: 0; padding-left: 2rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   .xz-widget - every widget on this page extends from this rule.
+   Owns shared typography + the token scale below.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-widget {
+  /* Layout */
+  width: min(100%, 960px);
+  margin-inline: auto;
+  margin-block: 2.5rem;
+
+  /* Typography baseline */
+  font-family: var(--font-sans);
+  color: var(--page-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern", "ss01";
+
+  /* Type scale - every font-size below references one of these. */
+  --xz-fs-3xs: 0.5625rem; /* tiny uppercase keys (size / sha-256 / e_shnum) */
+  --xz-fs-2xs: 0.625rem; /* role pills, step numbers */
+  --xz-fs-xs: 0.6875rem; /* code caps, version btn, mono micro */
+  --xz-fs-sm: 0.75rem; /* mono small body, axis ticks */
+  --xz-fs-md: 0.8125rem; /* mono code body, hash chip, foot */
+  --xz-fs-lg: 0.9375rem; /* prose body, step body, blurb */
+  --xz-fs-xl: 1.0625rem; /* step title, detail name */
+
+  /* Radius scale */
+  --xz-radius-sm: 4px;
+  --xz-radius-md: 6px;
+  --xz-radius-lg: 8px;
+  --xz-radius-xl: 10px;
+  --xz-radius-2xl: 12px;
+
+  /* Fade levels for scrolly inactive states.
+     Boosted from prior values (0.12 / 0.55) for AA-readability. */
+  --xz-fade-ghost: 0.32; /* edges/labels in not-yet-active stages */
+  --xz-fade-quiet: 0.7; /* step blocks not currently focused */
+
+  /* Common letter-spacing for caps */
+  --xz-tracking-caps: 0.12em;
+}
+
+.xz-widget *,
+.xz-widget *::before,
+.xz-widget *::after {
+  box-sizing: border-box;
+}
+.xz-widget code,
+.xz-widget pre,
+.xz-widget [data-numeric] {
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Timeline (①) - Aceternity-style sticky-phase + scroll-beam pattern.
+   Two-column desktop: sticky phase title on left, events on right.
+   A vertical line on the far left has an animated gradient fill that
+   tracks scroll progress through the section.
+   No italic display titles. Bold sans-serif throughout.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-tl {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  margin-block: 2.5rem 4rem;
+  position: relative;
+}
+
+.xz-tl-inner {
+  position: relative;
+  padding-block: 1rem 2rem;
+}
+
+/* Vertical beam - full-height background line + animated fill on top.
+   Anchored to the left edge of the inner container. */
+.xz-tl-beam {
+  position: absolute;
+  left: 1.25rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+  /* Soft mask so beam fades at the top and bottom. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+.xz-tl-beam-fill {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  width: 2px;
+  background: linear-gradient(
+    to top,
+    var(--xz-defender) 0%,
+    var(--xz-attacker) 35%,
+    var(--xz-attacker) 70%,
+    transparent 100%
+  );
+  transition: height 0.06s linear;
+}
+
+/* ─── Phase row: sticky title on left, events on right ──────────────── */
+.xz-tl-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  gap: 3rem;
+  padding-block: 1rem 4rem;
+  align-items: start;
+}
+.xz-tl-row:last-child { padding-bottom: 1rem; }
+
+/* Sticky phase column */
+.xz-tl-phase {
+  position: sticky;
+  top: calc(var(--header-h, 4.5rem) + 2rem);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-left: 2.75rem;
+  /* Self-align so it does not stretch across the row's full height. */
+  align-self: start;
+}
+
+/* Phase marker - solid filled circle on the beam line at row top. */
+.xz-tl-phase-marker {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--page-bg);
+  border: 2px solid var(--page-text);
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.xz-tl-phase-marker-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--page-text);
+}
+.xz-tl-row.is-release .xz-tl-phase-marker {
+  border-color: var(--xz-attacker);
+}
+.xz-tl-row.is-release .xz-tl-phase-marker-dot {
+  background: var(--xz-attacker);
+}
+.xz-tl-row.is-discovery .xz-tl-phase-marker {
+  border-color: var(--xz-defender);
+}
+.xz-tl-row.is-discovery .xz-tl-phase-marker-dot {
+  background: var(--xz-defender);
+}
+
+.xz-tl-phase-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.xz-tl-phase-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--page-text);
+  opacity: 0.55;
+}
+.xz-tl-row.is-release .xz-tl-phase-num { color: var(--xz-attacker); opacity: 1; }
+.xz-tl-row.is-discovery .xz-tl-phase-num { color: var(--xz-defender); opacity: 1; }
+
+.xz-tl-phase-name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: clamp(1.875rem, 1.5rem + 1.5vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--page-text);
+}
+.xz-tl-row.is-release .xz-tl-phase-name { color: var(--xz-attacker); }
+.xz-tl-row.is-discovery .xz-tl-phase-name { color: var(--xz-defender); }
+
+.xz-tl-phase-range {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--page-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+}
+
+/* ─── Events column ─────────────────────────────────────────────────── */
+.xz-tl-events {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  min-width: 0;
+}
+.xz-tl-event {
+  position: relative;
+}
+
+.xz-tl-event-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.875rem;
+  margin-bottom: 0.625rem;
+  flex-wrap: wrap;
+}
+.xz-tl-event-date {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--page-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.xz-tl-event-actor {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--page-text);
+}
+.xz-tl-event-kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--page-text);
+  opacity: 0.55;
+}
+.xz-tl-event-kind.is-att { color: var(--xz-attacker); opacity: 1; }
+.xz-tl-event-kind.is-def { color: var(--xz-defender); opacity: 1; }
+
+.xz-tl-event-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--page-text);
+  max-width: 36ch;
+}
+
+.xz-tl-event-summary {
+  margin: 0 0 0.875rem;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--page-text);
+  max-width: 60ch;
+}
+
+/* Verbatim quote - pulled-quote treatment. Big hanging opening mark in
+   the accent color does the visual work; italic Newsreader body at full
+   ink. Generous top margin so the glyph doesn't crash into the summary
+   above. No closing glyph (the inset alone signals end-of-quote). */
+.xz-tl-event-quote {
+  position: relative;
+  margin: 2.25rem 0 1.5rem;
+  padding: 0.5rem 0 0.5rem 2.5rem;
+  border-left: none;
+  font-family: var(--font-serif, Newsreader, Georgia, serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.3125rem;
+  line-height: 1.5;
+  letter-spacing: -0.003em;
+  color: var(--page-text);
+  max-width: 52ch;
+}
+.xz-tl-event-quote::before {
+  content: "\201C"; /* left double quotation mark, U+201C */
+  position: absolute;
+  left: -0.1rem;
+  top: 0.35em;
+  font-family: var(--font-serif, Newsreader, Georgia, serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 3em;
+  line-height: 0.85;
+  color: var(--page-text);
+  pointer-events: none;
+  user-select: none;
+}
+.xz-tl-event-quote.is-att::before { color: var(--xz-attacker); }
+.xz-tl-event-quote.is-def::before { color: var(--xz-defender); }
+
+/* Mini-terminal */
+.xz-tl-event-trace {
+  margin: 1rem 0;
+  background: var(--code-bg);
+  border: 1px solid var(--page-text);
+  padding: 0.875rem 1.125rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--page-text);
+  max-width: 60ch;
+  overflow-x: auto;
+}
+.xz-tl-trace-line { display: block; }
+.xz-tl-trace-prompt {
+  color: var(--xz-defender);
+  user-select: none;
+  margin-right: 0.5rem;
+  font-weight: 700;
+}
+.xz-tl-trace-cmd {
+  color: var(--page-text);
+  font-weight: 600;
+}
+.xz-tl-trace-out {
+  display: block;
+  color: var(--page-text);
+}
+.xz-tl-trace-cmt {
+  display: block;
+  color: var(--page-text);
+  font-style: italic;
+  margin-top: 0.375rem;
+  opacity: 0.75;
+}
+
+/* Email block - distinctive flourish for the disclosure event. */
+.xz-tl-email {
+  margin: 1rem 0;
+  border: 2px solid var(--xz-defender);
+  background: var(--page-bg);
+  font-family: var(--font-mono);
+  max-width: 62ch;
+}
+.xz-tl-email-headers {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.375rem 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 2px solid var(--xz-defender);
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--xz-defender) 8%, var(--page-bg));
+}
+.xz-tl-email-h-key {
+  font-weight: 700;
+  color: var(--xz-defender);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+  padding-top: 2px;
+}
+.xz-tl-email-h-val {
+  color: var(--page-text);
+  word-break: break-word;
+}
+.xz-tl-email-body {
+  padding: 1.25rem 1.25rem 1.5rem;
+  font-family: var(--font-serif, Newsreader, Georgia, serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--page-text);
+  white-space: pre-wrap;
+}
+
+.xz-tl-event-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.625rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--page-text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--page-text);
+  letter-spacing: 0.02em;
+  padding-bottom: 1px;
+}
+.xz-tl-event-source:hover {
+  color: var(--xz-attacker);
+  border-bottom-color: var(--xz-attacker);
+}
+.xz-tl-event-source-arrow {
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xz-tl-beam-fill { transition: none !important; }
+}
+
+@media (max-width: 768px) {
+  .xz-tl-row {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-block: 1.5rem 3rem;
+  }
+  .xz-tl-phase {
+    position: relative;
+    top: auto;
+    padding-left: 2.75rem;
+  }
+  .xz-tl-phase-name { font-size: 1.875rem; }
+  .xz-tl-events { padding-left: 2.75rem; }
+  .xz-tl-beam { left: 1rem; }
+  .xz-tl-phase-marker { left: 0.25rem; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   "Try it yourself" callout - RE-course aside.
+   Marked .not-prose so Tailwind Typography doesn't auto-quote it.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-tryit {
+  margin: 2rem auto;
+  max-width: min(100%, 720px);
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--xz-defender);
+  border-radius: 0 var(--xz-radius-lg) var(--xz-radius-lg) 0;
+  background: var(--subtle-bg);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--xz-fs-lg);
+  line-height: 1.6;
+}
+.xz-tryit-title {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--xz-defender);
+}
+.xz-tryit p {
+  margin: 0 0 0.75rem;
+}
+.xz-tryit p:last-child {
+  margin-bottom: 0;
+}
+.xz-tryit ul {
+  list-style: disc;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+.xz-tryit li {
+  margin-bottom: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.xz-tryit li:last-child {
+  margin-bottom: 0;
+}
+.xz-tryit code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.1em 0.35em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  border-radius: var(--xz-radius-xs, 3px);
+  color: var(--page-text);
+}
+.xz-tryit a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.xz-tryit a:hover {
+  border-bottom-style: solid;
+}
+.xz-tryit-note {
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 80%, transparent);
+  font-size: var(--xz-fs-sm);
+  color: color-mix(in srgb, var(--text-secondary) 85%, transparent);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Cast - dramatis personae before Act I.
+   2×2 grid on desktop, single column on mobile. Color-coded left spine
+   per role (target / attacker / defender). Solid colors, no transparency.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-cast {
+  margin: 2.5rem 0 3rem;
+}
+.xz-cast-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--page-text);
+  margin: 0 0 1.25rem;
+}
+.xz-cast-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 1.5rem;
+}
+.xz-cast-card {
+  position: relative;
+  padding: 1rem 1.125rem 1.125rem 1.375rem;
+  border-left: 4px solid var(--page-text);
+}
+.xz-cast-card.is-attacker { border-left-color: var(--xz-attacker); }
+.xz-cast-card.is-defender { border-left-color: var(--xz-defender); }
+.xz-cast-card.is-target { border-left-color: var(--page-text); }
+
+.xz-cast-card-head {
+  margin: 0 0 0.5rem;
+}
+.xz-cast-role {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--page-text);
+  margin-bottom: 0.25rem;
+}
+.xz-cast-card.is-attacker .xz-cast-role { color: var(--xz-attacker); }
+.xz-cast-card.is-defender .xz-cast-role { color: var(--xz-defender); }
+
+.xz-cast-name {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.012em;
+  color: var(--page-text);
+  display: flex;
+  align-items: baseline;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+.xz-cast-handle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--xz-attacker);
+  background: var(--xz-attacker-bg);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.xz-cast-card p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--page-text);
+}
+
+@media (max-width: 720px) {
+  .xz-cast-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Article typography: sans body (Wotfard, site default), tighter
+   hierarchy, justified prose. Newsreader is loaded italic-only site-wide
+   so we use serif italic only for the em emphasis. */
+
+.article-main .prose {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  letter-spacing: -0.003em;
+}
+
+.article-main .prose :where(p, blockquote):not(:where([class~="not-prose"] *)) {
+  text-align: left;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
+.article-main .prose :where(h2):not(:where([class~="not-prose"] *)) {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-top: 3.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.article-main .prose :where(h3):not(:where([class~="not-prose"] *)) {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  line-height: 1.25;
+  margin-top: 2.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.article-main .prose :where(h4):not(:where([class~="not-prose"] *)) {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Em uses Newsreader italic (the one variant actually loaded); gives
+   editorial accent without breaking the body. */
+.article-main .prose :where(em):not(:where([class~="not-prose"] *)) {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.article-main .prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1rem 0.9rem 1.15rem;
+  border-left: 3px solid var(--xz-defender);
+  background: color-mix(in srgb, var(--xz-defender) 7%, transparent);
+  color: var(--page-text);
+  font-family: var(--font-sans);
+  font-style: normal;
+}
+.article-main .prose :where(blockquote p):not(:where([class~="not-prose"] *)) {
+  margin: 0;
+  color: var(--page-text);
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.article-main .prose :where(ul, ol):not(:where([class~="not-prose"] *)) {
+  padding-left: 1.35rem;
+  margin-block: 1rem;
+}
+.article-main .prose :where(li):not(:where([class~="not-prose"] *)) {
+  padding-left: 0.2rem;
+  margin-block: 0.35rem;
+  text-align: left;
+}
+.article-main .prose :where(li p):not(:where([class~="not-prose"] *)) {
+  margin: 0;
+  text-align: left;
+}
+
+/* Code blocks: shrink the font and never wrap. On wide viewports the
+   block also breaks out a few rem on each side (using the unused margin
+   around the centered article). Targets this page only. */
+.article-main figure.expressive-code pre,
+.article-main figure.expressive-code pre code,
+.article-main figure.expressive-code .ec-line,
+.article-main figure.expressive-code .ec-line .code {
+  font-size: 0.78rem;
+  line-height: 1.55;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.article-main figure.expressive-code pre {
+  overflow-x: auto;
+}
+@media (min-width: 1024px) {
+  .article-main figure.expressive-code {
+    margin-left: -3rem;
+    margin-right: -3rem;
+    max-width: calc(100% + 6rem);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Asm line highlight (Act IV · The resolver) - Expressive Code's built-in
+   {N} line-mark syntax is intercepted by MDX in this Astro setup, so we
+   target the 13th .ec-line of the single asm block on this page (the
+   callq at offset 0x27 - the hostile branch into .Lx86_code.part.0).
+───────────────────────────────────────────────────────────────────────── */
+
+.expressive-code pre[data-language="asm"] code > .ec-line:nth-child(13) {
+  background: color-mix(in oklch, var(--xz-attacker) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--xz-attacker);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Sabotage timeline (Act I) - four out-of-band changes no ordinary source
+   review catches. Formerly a card grid; now a compact report-style timeline.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-sabotage {
+  margin: 1.75rem auto 2rem;
+  max-width: 760px;
+}
+
+.xz-sabotage-grid {
+  position: relative;
+  display: grid;
+  gap: 0;
+  padding-left: 2.25rem;
+}
+
+.xz-sabotage-grid::before {
+  content: "";
+  position: absolute;
+  left: 0.55rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--xz-defender), var(--xz-attacker));
+}
+
+.xz-sabotage-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 12rem) 1fr auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.95rem 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.xz-sabotage-card::before {
+  content: "";
+  position: absolute;
+  left: -2.15rem;
+  top: 1.08rem;
+  width: 0.82rem;
+  height: 0.82rem;
+  border-radius: 999px;
+  background: var(--page-bg);
+  border: 2px solid var(--xz-attacker);
+}
+
+.xz-sabotage-head {
+  display: contents;
+}
+
+.xz-sabotage-when {
+  grid-column: 1;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--xz-attacker);
+}
+
+.xz-sabotage-card h4 {
+  grid-column: 2;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 750;
+  line-height: 1.25;
+  color: var(--page-text);
+}
+
+.xz-sabotage-effect {
+  grid-column: 2;
+  margin: 0.25rem 0 0;
+  font-size: 0.94rem;
+  line-height: 1.48;
+  color: var(--text-secondary);
+}
+
+.xz-sabotage-src {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  white-space: nowrap;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.xz-sabotage-src:hover {
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .xz-sabotage-card {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+  .xz-sabotage-head,
+  .xz-sabotage-when,
+  .xz-sabotage-card h4,
+  .xz-sabotage-effect,
+  .xz-sabotage-src {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .xz-sabotage-src { justify-self: start; margin-top: 0.25rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Byte-flow stack (Act III · Stage 2) - vertical pipeline showing the
+   byte counts at each transformation, from compressed test fixture down
+   to the Stage-2 shell script.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-byteflow {
+  margin: 1.5rem auto;
+  max-width: 580px;
+  padding: 1.1rem 1.25rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page-bg);
+}
+
+.xz-byteflow-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.xz-byteflow-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--page-text) 4%, transparent);
+}
+
+.xz-byteflow-bytes {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--page-text);
+}
+
+.xz-byteflow-label {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.xz-byteflow-label code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.92em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  color: var(--page-text);
+}
+
+.xz-byteflow-row.is-out {
+  background: color-mix(in oklch, var(--xz-attacker) 8%, var(--page-bg));
+  border: 1px solid color-mix(in oklch, var(--xz-attacker) 35%, var(--border));
+}
+
+.xz-byteflow-row.is-out .xz-byteflow-bytes {
+  color: var(--xz-attacker);
+}
+
+.xz-byteflow-op {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.15rem 0.7rem 0.2rem;
+  flex-wrap: wrap;
+}
+
+.xz-byteflow-op::before {
+  content: "↓";
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 1rem;
+  color: var(--text-secondary);
+  width: 5.5rem;
+  text-align: right;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.xz-byteflow-op-cmd {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--xz-attacker);
+  flex-shrink: 0;
+}
+
+.xz-byteflow-op-note {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+@media (max-width: 540px) {
+  .xz-byteflow-row {
+    grid-template-columns: 4.5rem 1fr;
+    gap: 0.7rem;
+  }
+  .xz-byteflow-op::before {
+    width: 4.5rem;
+  }
+  .xz-byteflow-bytes {
+    font-size: 0.85rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   m4-flow diagram (Act II) - what the build-to-host.m4 variables evaluate
+   to, and the pipeline they assemble into. Pure HTML/CSS; replaces the
+   prose walkthrough that was dense with inline `code` runs.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-m4flow {
+  margin: 1.75rem 0 1.25rem;
+  max-width: 720px;
+  margin-inline: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page-bg);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.xz-m4flow-eyebrow {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.xz-m4flow-eyebrow-bottom {
+  margin: 1.4rem 0 0.85rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--page-text);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.xz-m4flow-eyebrow code,
+.xz-m4flow-eyebrow-bottom code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.92em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  color: var(--page-text);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.xz-m4flow-vars {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(8.5rem, max-content) 1fr;
+  column-gap: 1.25rem;
+  row-gap: 0.7rem;
+  align-items: baseline;
+}
+
+.xz-m4flow-vars dt {
+  margin: 0;
+}
+
+.xz-m4flow-vars dt code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--page-text);
+  background: none;
+  padding: 0;
+}
+
+.xz-m4flow-vars dd {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.xz-m4flow-val {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.9rem;
+  color: var(--xz-attacker);
+  font-weight: 600;
+  background: none;
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+.xz-m4flow-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.xz-m4flow-note code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.92em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  padding: 0 0.25em;
+  border-radius: 2px;
+  color: var(--page-text);
+}
+
+.xz-m4flow-pipe {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  counter-reset: m4flow-step;
+}
+
+.xz-m4flow-pipe li {
+  position: relative;
+  padding: 0.55rem 0.85rem 0.55rem 2.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--page-text) 3%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.85rem;
+  counter-increment: m4flow-step;
+}
+
+.xz-m4flow-pipe li::before {
+  content: counter(m4flow-step);
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: var(--xz-attacker);
+  color: var(--page-bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.xz-m4flow-pipe li code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: none;
+  padding: 0;
+  color: var(--page-text);
+}
+
+.xz-m4flow-pipe li code.is-att {
+  color: var(--xz-attacker);
+}
+
+.xz-m4flow-out {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--xz-attacker);
+}
+
+@media (max-width: 540px) {
+  .xz-m4flow {
+    padding: 1rem 1.1rem 1.25rem;
+  }
+  .xz-m4flow-vars {
+    grid-template-columns: 1fr;
+    row-gap: 0.85rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   sshd-startup timeline (Act IV · IFUNC, before RELRO) - two parallel
+   tracks: events in ld.so on the left, GOT state on the right. Both
+   tracks divert at step 3 (the attack window): events keep moving while
+   the GOT is - illegitimately - still writable.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-startup {
+  margin: 1.75rem 0 1.5rem;
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--page-bg);
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.xz-startup-eyebrow {
+  margin: 0 0 1rem;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.xz-startup-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.65fr);
+  column-gap: 1.25rem;
+  row-gap: 0.4rem;
+  align-items: stretch;
+}
+
+.xz-startup-head {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, var(--text-secondary));
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.35rem;
+}
+
+.xz-startup-event {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.6rem 0.6rem 0.6rem 0;
+  border-radius: 6px;
+}
+
+.xz-startup-num {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: var(--page-bg);
+  border: 2px solid color-mix(in srgb, var(--page-text) 22%, transparent);
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono, JetBrains Mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.xz-startup-body {
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.xz-startup-body h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--page-text);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.xz-startup-tag {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--xz-attacker);
+  background: color-mix(in oklch, var(--xz-attacker) 14%, var(--page-bg));
+  padding: 0.15em 0.55em;
+  border-radius: 3px;
+}
+
+.xz-startup-body p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.xz-startup-body code {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.88em;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  padding: 0.05em 0.3em;
+  border-radius: 3px;
+  color: var(--page-text);
+}
+
+.xz-startup-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--page-text) 4%, transparent);
+  border: 1px solid color-mix(in srgb, var(--page-text) 8%, transparent);
+}
+
+.xz-startup-state-label {
+  font-family: var(--font-mono, JetBrains Mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.xz-startup-state-note {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.78rem;
+  color: var(--muted, var(--text-secondary));
+  line-height: 1.4;
+}
+
+/* Attack-window step - both columns highlighted in attacker color */
+.xz-startup-event.is-window {
+  background: color-mix(in oklch, var(--xz-attacker) 6%, transparent);
+}
+
+.xz-startup-event.is-window .xz-startup-num {
+  background: var(--xz-attacker);
+  border-color: var(--xz-attacker);
+  color: var(--page-bg);
+}
+
+.xz-startup-state.is-window {
+  background: color-mix(in oklch, var(--xz-attacker) 12%, var(--page-bg));
+  border: 1px solid var(--xz-attacker);
+}
+
+.xz-startup-state.is-window .xz-startup-state-label {
+  color: var(--xz-attacker);
+}
+
+.xz-startup-state.is-window .xz-startup-state-note {
+  color: var(--xz-attacker);
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+/* Locked-GOT steps - slate (defender) tint to show the window is closed */
+.xz-startup-state.is-locked {
+  background: color-mix(in oklch, var(--xz-defender) 8%, var(--page-bg));
+  border: 1px solid color-mix(in srgb, var(--xz-defender) 30%, var(--border));
+}
+
+.xz-startup-state.is-locked .xz-startup-state-label {
+  color: var(--xz-defender);
+}
+
+@media (max-width: 620px) {
+  /* Collapse to single column: each event followed by its state. */
+  .xz-startup-grid {
+    grid-template-columns: 1fr;
+  }
+  .xz-startup-head-state {
+    display: none;
+  }
+  .xz-startup-state {
+    margin-left: 3.05rem;
+    margin-bottom: 0.2rem;
+  }
+  .xz-startup {
+    padding: 1rem 1.1rem 1.25rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Attribution chart - small inline bar chart for Jia Tan commit counts
+   by weekday (Karty/Henniger). Solid colors, no transparency washes.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-attrchart {
+  margin: 1.75rem 0 1.5rem;
+  color: var(--page-text);
+}
+.xz-attrchart svg {
+  width: 100%;
+  height: auto;
+  max-width: 480px;
+  display: block;
+  margin-inline: auto;
+}
+.xz-attrchart figcaption {
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin-top: 1.1rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-style: normal;
+  line-height: 1.55;
+  max-width: 58ch;
+  margin-inline: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Timezone map - Wikipedia world map base + overlay bands.
+   Bands placed at approximate longitudes; honest disclaimer in caption.
+───────────────────────────────────────────────────────────────────────── */
+
+.xz-tzmap {
+  margin: 1.5rem 0 2rem;
+  color: var(--page-text);
+}
+.xz-tzmap-frame {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  aspect-ratio: 950 / 620;
+}
+/* Inlined world map. Three opaque tokens - gray, defender (UTC+2/+3),
+   attacker (UTC+8) - mixed in sRGB to keep the muted "78% over page-bg"
+   look without transparency, so split-zone overlays render the same shade
+   as direct fills. */
+.xz-tzmap-base {
+  --tz-gray: color-mix(in srgb, var(--page-text) 32%, var(--page-bg));
+  --tz-defender: color-mix(in srgb, var(--xz-defender) 78%, var(--page-bg));
+  --tz-attacker: color-mix(in srgb, var(--xz-attacker) 78%, var(--page-bg));
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+:root.light .xz-tzmap-base {
+  --tz-gray: color-mix(in srgb, var(--page-text) 22%, var(--page-bg));
+}
+.xz-tzmap-base svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.xz-tzmap-base path {
+  fill: var(--tz-gray);
+  transition: fill 0.15s ease;
+}
+
+/* UTC+8 (claimed): China Standard Time / SGT / MYT / PHT / AWST.
+   Indonesia is split - only its WITA islands shade. Russia (Irkutsk) and
+   Western Australia land here via the .xz-tz-attacker overlay. */
+.xz-tzmap-base path#china,
+.xz-tzmap-base path#hainan,
+.xz-tzmap-base path#taiwan,
+.xz-tzmap-base path#mongolia,
+.xz-tzmap-base path#malaysia,
+.xz-tzmap-base path[id="east malaysia"],
+.xz-tzmap-base path#brunei,
+.xz-tzmap-base path#luzon,
+.xz-tzmap-base path#palawan,
+.xz-tzmap-base path#mindoro,
+.xz-tzmap-base path#samar,
+.xz-tzmap-base path#negros,
+.xz-tzmap-base path#cebu,
+.xz-tzmap-base path#bali,
+.xz-tzmap-base path#sulawesi,
+.xz-tzmap-base path#flores,
+.xz-tzmap-base path#lombok,
+.xz-tzmap-base path#sumba,
+.xz-tzmap-base .xz-tz-attacker {
+  fill: var(--tz-attacker);
+}
+
+/* UTC+2/+3 (actual): Eastern Europe → Levant → Arabia → east+southern Africa.
+   Russia's western (UTC+3) slice lands here via the .xz-tz-defender overlay.
+   Iran (UTC+3:30) excluded as a half-hour zone. */
+.xz-tzmap-base path#finland,
+.xz-tzmap-base path#estonia,
+.xz-tzmap-base path#hiumaa,
+.xz-tzmap-base path#saaremaa,
+.xz-tzmap-base path#lithuania,
+.xz-tzmap-base path#belarus,
+.xz-tzmap-base path#ukraine,
+.xz-tzmap-base path#moldova,
+.xz-tzmap-base path#romania,
+.xz-tzmap-base path#bulgaria,
+.xz-tzmap-base path#greece,
+.xz-tzmap-base path#crete,
+.xz-tzmap-base path#cyprus,
+.xz-tzmap-base path#thrace,
+.xz-tzmap-base path#turkey,
+.xz-tzmap-base path#syria,
+.xz-tzmap-base path#lebanon,
+.xz-tzmap-base path#israel,
+.xz-tzmap-base path#jordan,
+.xz-tzmap-base path#iraq,
+.xz-tzmap-base path#kuwait,
+.xz-tzmap-base path#saudi,
+.xz-tzmap-base path#qatar,
+.xz-tzmap-base path#yemen,
+.xz-tzmap-base path#libya,
+.xz-tzmap-base path#egypt,
+.xz-tzmap-base path#sudan,
+.xz-tzmap-base path#south_sudan,
+.xz-tzmap-base path#ethiopia,
+.xz-tzmap-base path#eritrea,
+.xz-tzmap-base path#djibouti,
+.xz-tzmap-base path#somalia,
+.xz-tzmap-base path#somaliland,
+.xz-tzmap-base path#kenya,
+.xz-tzmap-base path#tanzania,
+.xz-tzmap-base path#uganda,
+.xz-tzmap-base path#rwanda,
+.xz-tzmap-base path#burundi,
+.xz-tzmap-base path#zambia,
+.xz-tzmap-base path#zimbabwe,
+.xz-tzmap-base path#botswana,
+.xz-tzmap-base path[id="south africa"],
+.xz-tzmap-base path#lesotho,
+.xz-tzmap-base path#swaziland,
+.xz-tzmap-base path#mozambique,
+.xz-tzmap-base path#malawi,
+.xz-tzmap-base path#namibia,
+.xz-tzmap-base path#madagascar,
+.xz-tzmap-base path#mayotte,
+.xz-tzmap-base path[id="grande comore"],
+.xz-tzmap-base .xz-tz-defender {
+  fill: var(--tz-defender);
+}
+
+/* Labels sit BELOW the map, each centered under its band's longitude.
+   3px top-border in the band's color visually connects to the band. */
+.xz-tzmap-labels {
+  position: relative;
+  height: 5.5rem;
+  margin-top: 0.625rem;
+  max-width: 760px;
+  margin-inline: auto;
+}
+.xz-tzmap-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+  padding: 0.5rem 0.875rem;
+  border-top: 3px solid var(--page-text);
+  background: var(--page-bg);
+}
+.xz-tzmap-label.is-actual { border-top-color: var(--xz-defender); }
+.xz-tzmap-label.is-claimed { border-top-color: var(--xz-attacker); }
+.xz-tzmap-label-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--page-text);
+}
+.xz-tzmap-label-tz {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 4px;
+  color: var(--page-text);
+}
+.xz-tzmap-label-where {
+  font-family: var(--font-serif, Newsreader, Georgia, serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--page-text);
+  margin-top: 4px;
+}
+.xz-tzmap-label.is-actual .xz-tzmap-label-tag,
+.xz-tzmap-label.is-actual .xz-tzmap-label-tz { color: var(--xz-defender); }
+.xz-tzmap-label.is-claimed .xz-tzmap-label-tag,
+.xz-tzmap-label.is-claimed .xz-tzmap-label-tz { color: var(--xz-attacker); }
+
+.xz-tzmap figcaption {
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  margin-top: 1.1rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-style: normal;
+  line-height: 1.55;
+  max-width: 64ch;
+  margin-inline: auto;
+}
+@media (max-width: 540px) {
+  .xz-tzmap-label-where { display: none; }
+  .xz-tzmap-label-tz { font-size: 12px; }
+}
+
+/* GOT before/after: sshd's function-pointer table after the IFUNC resolver
+   (one row rewritten, the rest byte-identical) */
+.xz-gotrewrite {
+  margin: 1.5rem 0;
+}
+.xz-gotrewrite-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 0.75rem;
+}
+.xz-gotrewrite-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.xz-gotrewrite-col {
+  background: var(--subtle-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+.xz-gotrewrite-col.is-after {
+  border-color: var(--xz-attacker);
+  background: var(--xz-attacker-bg);
+}
+.xz-gotrewrite-h {
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-xs);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+.xz-gotrewrite-col.is-after .xz-gotrewrite-h {
+  color: var(--xz-attacker);
+  border-bottom-color: color-mix(in oklch, var(--xz-attacker) 35%, transparent);
+}
+.xz-gotrewrite-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-md);
+  line-height: 1.5;
+}
+.xz-gotrewrite-rows li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  gap: 1rem;
+}
+.xz-gotrewrite-rows li span { color: var(--text-secondary); }
+.xz-gotrewrite-rows li.is-muted code,
+.xz-gotrewrite-rows li.is-muted span { color: var(--muted); }
+.xz-gotrewrite-rows li.is-poisoned {
+  background: color-mix(in oklch, var(--xz-attacker) 14%, transparent);
+  margin: 0 -0.5rem;
+  padding: 0.3rem 0.5rem 0.3rem 0.4rem;
+  border-radius: 4px;
+  border-left: 2px solid var(--xz-attacker);
+}
+.xz-gotrewrite-rows li.is-poisoned code,
+.xz-gotrewrite-rows li.is-poisoned span {
+  color: var(--xz-attacker);
+  font-weight: 600;
+}
+.xz-gotrewrite figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  line-height: 1.55;
+  max-width: 64ch;
+}
+@media (max-width: 640px) {
+  .xz-gotrewrite-grid { grid-template-columns: 1fr; }
+}
+
+/* Path-in chain: two patches and one transitive dep bring liblzma into sshd
+   (Act IV · The path). Vertical chain of nodes with "why" annotations between. */
+.xz-pathin {
+  margin: 1.5rem 0;
+  max-width: 760px;
+}
+.xz-pathin-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin: 0 0 0.85rem;
+}
+.xz-pathin-node {
+  padding: 0.7rem 1rem;
+  background: var(--subtle-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--xz-defender);
+  border-radius: 6px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+.xz-pathin-node.is-attacker {
+  border-color: var(--xz-attacker);
+  border-left-color: var(--xz-attacker);
+  background: var(--xz-attacker-bg);
+}
+.xz-pathin-node code {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+  background: none;
+  padding: 0;
+}
+.xz-pathin-node.is-attacker code { color: var(--xz-attacker); }
+.xz-pathin-node > span {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-style: italic;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.xz-pathin-link {
+  margin-left: 1rem;
+  padding: 0.55rem 0 0.55rem 1.5rem;
+  border-left: 1px dashed var(--border);
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+}
+.xz-pathin-link .arrow {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.xz-pathin-link > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.xz-pathin-link .h {
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-md);
+  color: var(--text);
+}
+.xz-pathin-link .h code {
+  background: none;
+  padding: 0;
+  color: var(--xz-attacker);
+  font-size: inherit;
+}
+.xz-pathin-link .p {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-style: italic;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Lessons / key takeaways */
+.xz-lessons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0 2rem;
+}
+.xz-lessons article {
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--xz-defender);
+  padding: 1rem;
+  background: var(--page-bg);
+}
+.xz-lessons span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--xz-defender);
+}
+.xz-lessons h4 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  line-height: 1.25;
+  color: var(--page-text);
+}
+.xz-lessons p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.48;
+  color: var(--text-secondary);
+}
+.xz-lessons code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.05em 0.28em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  color: var(--page-text);
+}
+@media (max-width: 760px) {
+  .xz-lessons { grid-template-columns: 1fr; }
+}
+
+/* Request-time stub diagram */
+.xz-stub {
+  margin: 1.75rem auto;
+  max-width: 820px;
+  padding: 1.15rem 1.25rem 1.2rem;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--xz-attacker);
+  background: var(--page-bg);
+}
+.xz-stub-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--xz-fs-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--xz-attacker);
+  margin: 0 0 1rem;
+}
+.xz-stub code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.05em 0.28em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--page-text) 6%, transparent);
+  color: var(--page-text);
+}
+.xz-stub-route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.8rem;
+  align-items: stretch;
+  margin-bottom: 1rem;
+}
+.xz-stub-node {
+  border: 1px solid var(--border);
+  background: var(--subtle-bg);
+  padding: 0.85rem 0.95rem;
+}
+.xz-stub-node .k {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.xz-stub-node strong {
+  display: block;
+  font-size: 1.05rem;
+  line-height: 1.2;
+  color: var(--page-text);
+}
+.xz-stub-node p {
+  margin: 0.45rem 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.xz-stub-node.is-hot {
+  border-color: var(--xz-attacker);
+  background: var(--xz-attacker-bg);
+}
+.xz-stub-node.is-hot .k,
+.xz-stub-node.is-hot strong { color: var(--xz-attacker); }
+.xz-stub-arrow {
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--xz-attacker);
+}
+.xz-stub-frame {
+  display: grid;
+  grid-template-columns: 0.55fr 2.2fr 2.4fr;
+  margin: 1rem 0;
+  border: 1px solid color-mix(in srgb, var(--xz-attacker) 50%, var(--border));
+}
+.xz-stub-frame .seg {
+  min-height: 4.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.8rem 0.9rem;
+  background: color-mix(in srgb, var(--xz-attacker) 12%, var(--page-bg));
+  border-left: 1px solid color-mix(in srgb, var(--xz-attacker) 35%, var(--border));
+}
+.xz-stub-frame .seg:first-child { border-left: 0; }
+.xz-stub-frame strong {
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--xz-attacker);
+}
+.xz-stub-frame span {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+.xz-stub-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+}
+.xz-stub-steps li {
+  border: 1px solid var(--border);
+  padding: 0.85rem;
+  background: var(--page-bg);
+}
+.xz-stub-steps li > span {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--xz-defender);
+}
+.xz-stub-steps strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  color: var(--page-text);
+}
+.xz-stub-steps p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.42;
+  color: var(--text-secondary);
+}
+.xz-stub-steps li.is-terminal {
+  border-color: var(--xz-attacker);
+}
+.xz-stub-steps li.is-terminal > span,
+.xz-stub-steps li.is-terminal strong { color: var(--xz-attacker); }
+.xz-stub figcaption {
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  font-style: normal;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  line-height: 1.5;
+}
+@media (max-width: 760px) {
+  .xz-stub-route,
+  .xz-stub-steps { grid-template-columns: 1fr; }
+  .xz-stub-arrow { transform: rotate(90deg); }
+}

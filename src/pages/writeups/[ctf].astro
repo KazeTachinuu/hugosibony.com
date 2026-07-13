@@ -1,0 +1,110 @@
+---
+import { getCollection } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Layout from '~/layouts/Layout.astro';
+import Breadcrumb from '~/components/Breadcrumb.astro';
+import PageHeader from '~/components/PageHeader.astro';
+import ContentCard from '~/components/ContentCard.astro';
+import { fmtDateShort } from '~/lib/fmt';
+
+type Chal = Awaited<ReturnType<typeof getCollection<'writeups'>>>[number];
+
+export const getStaticPaths = (async () => {
+  const all = await getCollection('writeups', (e) => (import.meta.env.DEV || !e.data.draft) && e.data.cat === 'chal');
+  const groups = new Map<string, { name: string; items: Chal[] }>();
+  for (const w of all) {
+    const key = w.id.split('/')[0]; // lowercased url segment, matches challenge URLs
+    const name = w.data.ctf ?? key;
+    if (!groups.has(key)) groups.set(key, { name, items: [] });
+    groups.get(key)!.items.push(w);
+  }
+  return [...groups].map(([key, g]) => ({ params: { ctf: key }, props: g }));
+}) satisfies GetStaticPaths;
+
+const { name, items } = Astro.props;
+
+const sorted = items.sort((a, b) => {
+  const da = a.data.date ? new Date(a.data.date).getTime() : 0;
+  const db = b.data.date ? new Date(b.data.date).getTime() : 0;
+  return db - da;
+});
+const cats = [...new Set(sorted.map((c) => c.data.categories).filter(Boolean))];
+const desc = `${sorted.length} challenge${sorted.length > 1 ? 's' : ''}${cats.length ? ` · ${cats.join(', ')}` : ''}`;
+
+// Group by year (second path segment), newest year first.
+const byYear = new Map<string, Chal[]>();
+for (const ch of sorted) {
+  const year = ch.id.split('/')[1] ?? '';
+  if (!byYear.has(year)) byYear.set(year, []);
+  byYear.get(year)!.push(ch);
+}
+const years = [...byYear.keys()].sort((a, b) => b.localeCompare(a));
+
+function footer(ch: Chal): string {
+  const parts: string[] = [];
+  if (ch.data.difficulty) parts.push(ch.data.difficulty);
+  if (ch.data.date) parts.push(fmtDateShort(ch.data.date));
+  return parts.join(' · ');
+}
+---
+
+<Layout title={`${name} · Writeups`} description={desc} mainClass="max-w-5xl mx-auto px-6 py-16">
+  <Breadcrumb items={[
+    { label: 'Home', href: '/' },
+    { label: 'Writeups', href: '/writeups/' },
+    { label: name },
+  ]} />
+
+  <PageHeader title={name} section="writeups" description={desc} />
+
+  {years.map((year) => (
+    <section id={year} class="wu-year-group">
+      <a href={`#${year}`} class="wu-year-head" data-share>
+        <span class="wu-year">{year}</span>
+        <span class="wu-year-count">{byYear.get(year)!.length}</span>
+        <span class="wu-year-hash" aria-hidden="true">#</span>
+      </a>
+      <div class="wu-grid">
+        {byYear.get(year)!.map((ch) => (
+          <ContentCard
+            href={`/writeups/${ch.id}/`}
+            title={ch.data.title}
+            description={ch.data.description}
+            category={ch.data.categories || 'Writeup'}
+            footer={footer(ch)}
+          />
+        ))}
+      </div>
+    </section>
+  ))}
+</Layout>
+
+<style>
+  .wu-year-group { margin-bottom: 2.5rem; scroll-margin-top: 5rem; }
+  .wu-year-group:last-child { margin-bottom: 0; }
+  .wu-year-head {
+    display: flex; align-items: baseline; gap: 0.6rem;
+    margin-bottom: 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit; cursor: pointer;
+  }
+  .wu-year { font-family: var(--font-mono, ui-monospace, monospace); font-size: 1.05rem; font-weight: 600; letter-spacing: 0.02em; color: var(--page-text); transition: color 0.15s ease; }
+  .wu-year-count { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.72rem; color: var(--muted); }
+  .wu-year-hash {
+    font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.8rem; color: var(--accent);
+    opacity: 0; transition: opacity 0.15s ease; margin-left: auto;
+  }
+  .wu-year-head:hover .wu-year { color: var(--accent); }
+  .wu-year-head:hover .wu-year-hash { opacity: 0.85; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLAnchorElement>('.wu-year-head[data-share]').forEach((a) => {
+    a.addEventListener('click', () => {
+      const url = location.origin + location.pathname + a.getAttribute('href');
+      navigator.clipboard?.writeText(url);
+      const h = a.querySelector<HTMLElement>('.wu-year-hash');
+      if (h) { const t = h.textContent; h.textContent = 'lien copié'; setTimeout(() => (h.textContent = t), 1200); }
+    });
+  });
+</script>

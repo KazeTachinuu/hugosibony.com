@@ -1,0 +1,72 @@
+---
+title: "DNS: 1.1.1.1, 8.8.8.8 or 9.9.9.9, which to choose?"
+description: "Pick a public DNS resolver, set it, prove it works."
+date: 2026-07-11
+updated: 2026-07-13
+categories: ["notes"]
+tags: ["dns", "privacy", "networking"]
+---
+
+import WhatIspSees from '~/components/dns/WhatIspSees.astro';
+import ResolverTable from '~/components/dns/ResolverTable.astro';
+import DigitSwitch from '~/components/dns/DigitSwitch.astro';
+import { Callout } from '~/components/mdx';
+
+Every time you visit a website, your device first asks a **DNS resolver** a question ("what's the IP of `wikipedia.org`?"). By default, that resolver belongs to your ISP. It sees every domain you visit, often logs it, and sometimes hijacks typos into ad pages.
+
+Swapping it for a public resolver is a one-line change, and here's why it's worth pairing with encryption:
+
+<WhatIspSees />
+
+## The contenders
+
+The only real decision is: **do you want the resolver to filter anything?**
+
+<ResolverTable />
+
+## The last digit is a mode switch
+
+Quad9 confuses people because `9.9.9.9`, `9.9.9.10` and `9.9.9.11` sound like three different places. They're the same infrastructure: the last octet just flips features on and off ([official list](https://quad9.net/service/service-addresses-and-features/)):
+
+<DigitSwitch />
+
+Cloudflare copied the pattern: `1.1.1.2` and `1.1.1.3` are `1.1.1.1` with blocklists bolted on.
+
+## Which one
+
+- **Fast and unfiltered** → `1.1.1.1`
+- **Free malware blocking, non-profit** → `9.9.9.9`
+- **Block ads on every device at once** → `94.140.14.14` on the router
+- **Analyzing malware, or debugging "site won't load"** → `9.9.9.10`
+
+## Set it
+
+<Callout type="tip" title="Set it on the router">
+One change in the router's admin page (DHCP, then DNS) and every device on the network inherits it: phones, TVs, guests.
+</Callout>
+
+Otherwise, set it per-machine in your OS network settings, and enable "secure DNS" (DoH) in the browser so queries are encrypted in transit. That's the toggle from the demo above.
+
+## Prove it
+
+```bash
+# Who is resolving my queries?
+dig +short resolver.dnscrypt.info txt
+
+# DNSSEC validation on? An answer here means NO. It must fail.
+dig +short dnssec-failed.org
+
+# Malware filter live? Blocked on 9.9.9.9, resolves on 9.9.9.10.
+dig +short isitblocked.org @9.9.9.9
+dig +short isitblocked.org @9.9.9.10
+```
+
+No terminal: [on.quad9.net](https://on.quad9.net/) for Quad9, [one.one.one.one/help](https://one.one.one.one/help) for Cloudflare.
+
+## When things break
+
+- [dns.google/cache](https://dns.google/cache) / [one.one.one.one/purge-cache](https://one.one.one.one/purge-cache/): flush a stale record after a DNS change
+- [quad9.net/result](https://quad9.net/result/): is Quad9 blocking this domain, and why
+- [zonemaster.net](https://www.zonemaster.net/): full health check of a zone you own
+
+For the exhaustive version (jurisdictions, logging policies, protocols) see [Privacy Guides](https://www.privacyguides.org/en/dns/). This is deliberately the short one.

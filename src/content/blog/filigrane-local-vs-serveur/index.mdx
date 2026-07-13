@@ -1,0 +1,100 @@
+---
+title: "Watermarking an ID: what actually leaves your device"
+description: "France's official watermarking tool uploads your document before stamping it. The network trace, and a browser-only alternative that sends nothing."
+date: 2026-07-11
+updated: 2026-07-13
+categories: ["notes"]
+tags: ["privacy", "watermark", "local-first", "pdf"]
+---
+
+import govUpload from './gov-upload.png';
+import localApp from './local-app.png';
+import { Image } from 'astro:assets';
+
+<div data-lang-content="en">
+
+Before sending a copy of your ID to a letting agency, stamp it: *rental file, Agence Martin, 11/07/2026*. France ships an official tool for exactly that, [filigrane.beta.gouv.fr](https://filigrane.beta.gouv.fr/). It works. It also uploads your document.
+
+## It uploads
+
+The site says so, right above the button:
+
+<Image src={govUpload} alt="The FiligraneFacile homepage, whose info box states that original files are deleted from their servers after generation" />
+
+> Les fichiers originaux seront **effacés de nos serveurs** après la génération du fichier filigrané.
+
+"Deleted from our servers" implies they arrive there first. The network confirms it:
+
+```http
+POST https://api.filigrane.beta.gouv.fr/api/document/files
+content-type: multipart/form-data
+```
+
+The raw file, still unmarked, is processed server-side (Apache PDFBox on Scalingo) and returned by UUID.
+
+The service is legitimate: SecNumCloud-certified, files deleted after download. But the order of operations is wrong. The document you were trying to protect sits on someone else's machine *before* it gets the mark that protects it. From there, its safety is a policy, not a property.
+
+## The browser can do it
+
+Render each page to a canvas, stamp the text, flatten it into the pixels, reassemble the PDF. None of that needs a server. So I rebuilt the tool that way: [filigrane-local.fr](https://filigrane-local.fr) ([source](https://github.com/KazeTachinuu/filigrane-local)).
+
+<Image src={localApp} alt="Filigrane Local watermarking a test ID document, 100% local: preview and download button ready" />
+
+Same document, same result. The network tab during watermarking:
+
+```http
+GET  /pdfjs/pdf.worker.min.mjs    (same origin)
+GET  blob:...                     (in-memory preview)
+```
+
+Nothing remote. A `connect-src 'self'` policy makes an upload impossible even if the code tried one, and the page keeps working offline.
+
+You have no reason to trust my deployment either. It is a static export: `bun run build`, then serve `out/` from wherever you like ([source](https://github.com/KazeTachinuu/filigrane-local)).
+
+Watermark the copy before you send it. Just don't send it to get it watermarked.
+
+</div>
+
+<div data-lang-content="fr" hidden>
+
+Avant d'envoyer une copie de votre pièce d'identité à une agence, apposez-y un filigrane : *dossier de location, agence Martin, le 11/07/2026*. L'État propose un outil officiel pour ça, [filigrane.beta.gouv.fr](https://filigrane.beta.gouv.fr/). Il fonctionne. Il envoie aussi votre document.
+
+## Il l'envoie
+
+Le site le dit, juste au-dessus du bouton :
+
+<Image src={govUpload} alt="La page d'accueil de FiligraneFacile, dont l'encart indique que les fichiers originaux sont effacés de leurs serveurs après génération" />
+
+> Les fichiers originaux seront **effacés de nos serveurs** après la génération du fichier filigrané.
+
+« Effacés de nos serveurs » suppose qu'ils y arrivent d'abord. Le réseau le confirme :
+
+```http
+POST https://api.filigrane.beta.gouv.fr/api/document/files
+content-type: multipart/form-data
+```
+
+Le fichier brut, encore nu, est traité côté serveur (Apache PDFBox sur Scalingo) puis renvoyé par UUID.
+
+Le service est légitime : certifié SecNumCloud, fichiers supprimés après téléchargement. Mais l'ordre des opérations est le mauvais. Le document que vous cherchiez à protéger se trouve sur la machine d'un tiers *avant* de recevoir la marque censée le protéger. À partir de là, sa sécurité n'est plus une propriété, c'est une politique.
+
+## Le navigateur sait le faire
+
+Rendre chaque page sur un canvas, apposer le texte, l'aplatir dans les pixels, réassembler le PDF. Rien là-dedans ne réclame un serveur. J'ai donc reconstruit l'outil ainsi : [filigrane-local.fr](https://filigrane-local.fr) ([code source](https://github.com/KazeTachinuu/filigrane-local)).
+
+<Image src={localApp} alt="Filigrane Local filigranant une pièce d'identité de test, 100 % localement : aperçu et bouton de téléchargement prêts" />
+
+Même document, même résultat. L'onglet réseau pendant le filigranage :
+
+```http
+GET  /pdfjs/pdf.worker.min.mjs    (même origine)
+GET  blob:...                     (aperçu en mémoire)
+```
+
+Rien de distant. Une règle `connect-src 'self'` rend l'envoi impossible même si le code en tentait un, et la page continue de fonctionner hors ligne.
+
+Vous n'avez pas plus de raison de faire confiance à mon déploiement. C'est un export statique : `bun run build`, puis servez `out/` où vous voulez ([source](https://github.com/KazeTachinuu/filigrane-local)).
+
+Filigranez la copie avant de l'envoyer. Évitez seulement de l'envoyer pour la faire filigraner.
+
+</div>

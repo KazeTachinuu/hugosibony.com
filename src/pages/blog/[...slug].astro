@@ -1,0 +1,66 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Layout from '~/layouts/Layout.astro';
+import Breadcrumb from '~/components/Breadcrumb.astro';
+import ArticleHeader from '~/components/ArticleHeader.astro';
+import ArticleFooter from '~/components/ArticleFooter.astro';
+import TableOfContents from '~/components/TableOfContents.astro';
+import ArticleLikes from '~/components/ArticleLikes.astro';
+import DraftBanner from '~/components/DraftBanner.astro';
+import PostNav from '~/components/PostNav.astro';
+import * as MDX from '~/components/mdx';
+
+export const getStaticPaths = (async () => {
+  const posts = (await getCollection('blog', (e) => import.meta.env.DEV || !e.data.draft))
+    .sort((a, b) => +new Date(a.data.date) - +new Date(b.data.date));
+  return posts.map((p, i) => ({
+    params: { slug: p.id },
+    props: {
+      post: p,
+      prev: posts[i - 1] && { href: `/blog/${posts[i - 1].id}/`, title: posts[i - 1].data.title },
+      next: posts[i + 1] && { href: `/blog/${posts[i + 1].id}/`, title: posts[i + 1].data.title },
+    },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post, prev, next } = Astro.props;
+const { Content, headings } = await render(post);
+
+const category = post.data.categories[0]
+  ? post.data.categories[0].charAt(0).toUpperCase() + post.data.categories[0].slice(1)
+  : 'Blog';
+---
+
+<Layout title={post.data.title} description={post.data.description} mainClass="article-layout px-6 py-16" noindex={post.data.draft}>
+  <div class="article-main">
+    <Breadcrumb items={[
+      { label: 'Home', href: '/' },
+      { label: 'Blog', href: '/blog/' },
+      { label: post.data.title },
+    ]} />
+
+    {post.data.draft && <DraftBanner />}
+
+    <ArticleHeader
+      title={post.data.title}
+      category={category}
+      date={post.data.date}
+      updated={post.data.updated}
+      description={post.data.description}
+    />
+
+    <article class="prose prose-lg dark:prose-invert max-w-none">
+      <Content components={MDX} />
+    </article>
+
+    <PostNav prev={prev} next={next} />
+
+    <ArticleFooter slug={`blog/${post.id}`} date={post.data.date} updated={post.data.updated} />
+  </div>
+
+  <aside class="article-sidebar">
+    <TableOfContents headings={headings} />
+    <ArticleLikes slug={`blog/${post.id}`} />
+  </aside>
+</Layout>

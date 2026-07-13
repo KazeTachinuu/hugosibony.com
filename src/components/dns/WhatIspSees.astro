@@ -1,0 +1,329 @@
+---
+/**
+ * Full DNS round trip, toggleable between plain port-53 and DoH.
+ * Query travels out on the top lane, the answer comes back on the
+ * bottom lane; the ISP note says what it can actually read in each mode.
+ */
+---
+
+<figure class="dns-widget dns-isp" aria-label="What your ISP sees: plain DNS versus encrypted DNS">
+  <div class="dns-isp-toggle" role="tablist" aria-label="DNS transport">
+    <button type="button" role="tab" aria-selected="true" data-mode="plain">Plain DNS <span class="dns-isp-port">:53</span></button>
+    <button type="button" role="tab" aria-selected="false" data-mode="doh">Encrypted <span class="dns-isp-port">DoH</span></button>
+  </div>
+
+  <div class="dns-isp-diagram">
+    <div class="dns-isp-node">
+      <span class="dns-isp-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/></svg>
+      </span>
+      <span class="dns-isp-name">you</span>
+      <span class="dns-isp-note">&nbsp;</span>
+    </div>
+
+    <div class="dns-isp-lane" style="--seg: 0">
+      <div class="dns-isp-wire dns-isp-out">
+        <span class="dns-isp-chip" data-plain>wikipedia.org?</span>
+        <span class="dns-isp-chip dns-isp-cipher" data-doh hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          a9 3f c0 11
+        </span>
+        <span class="dns-isp-dot" aria-hidden="true"></span>
+      </div>
+      <div class="dns-isp-wire dns-isp-back">
+        <span class="dns-isp-chip" data-plain>185.15.59.224</span>
+        <span class="dns-isp-chip dns-isp-cipher" data-doh hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          5d 08 e2 74
+        </span>
+        <span class="dns-isp-dot" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="dns-isp-node">
+      <span class="dns-isp-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M10 21v-3h4v3"/></svg>
+      </span>
+      <span class="dns-isp-name">your ISP</span>
+      <span class="dns-isp-note dns-isp-note-warn" data-plain>reads both ways</span>
+      <span class="dns-isp-note" data-doh hidden>sees only TLS</span>
+    </div>
+
+    <div class="dns-isp-lane" style="--seg: 1">
+      <div class="dns-isp-wire dns-isp-out">
+        <span class="dns-isp-chip" data-plain>wikipedia.org?</span>
+        <span class="dns-isp-chip dns-isp-cipher" data-doh hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          a9 3f c0 11
+        </span>
+        <span class="dns-isp-dot" aria-hidden="true"></span>
+      </div>
+      <div class="dns-isp-wire dns-isp-back">
+        <span class="dns-isp-chip" data-plain>185.15.59.224</span>
+        <span class="dns-isp-chip dns-isp-cipher" data-doh hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          5d 08 e2 74
+        </span>
+        <span class="dns-isp-dot" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="dns-isp-node">
+      <span class="dns-isp-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+      </span>
+      <span class="dns-isp-name">resolver</span>
+      <span class="dns-isp-note">answers</span>
+    </div>
+  </div>
+
+  <div class="dns-isp-legend">
+    <span class="dns-isp-legend-item"><span class="dns-isp-arrow" aria-hidden="true"></span> query</span>
+    <span class="dns-isp-legend-item"><span class="dns-isp-arrow dns-isp-arrow-back" aria-hidden="true"></span> answer</span>
+  </div>
+
+  <p class="dns-isp-verdict" data-plain>
+    The question <em>and</em> the answer cross the wire <strong>in clear text</strong>. Your ISP can log every domain you visit, or rewrite the answer, whichever resolver you picked.
+  </p>
+  <p class="dns-isp-verdict" data-doh hidden>
+    The ISP sees <strong>one TLS connection to the resolver</strong>, nothing else. Only the resolver you chose learns which domains you visit.
+  </p>
+</figure>
+
+<style>
+  .dns-isp {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1.75rem 1.5rem;
+  }
+  .dns-isp-toggle {
+    display: flex;
+    gap: 0.375rem;
+    margin-bottom: 2rem;
+  }
+  .dns-isp-toggle button {
+    font: 500 0.85rem var(--font-sans);
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-smooth);
+  }
+  .dns-isp-toggle button[aria-selected="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  .dns-isp-port {
+    opacity: 0.7;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+
+  /* Diagram: node / lane / node / lane / node */
+  .dns-isp-diagram {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .dns-isp-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--page-text);
+  }
+  .dns-isp-icon {
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    background: var(--subtle-bg);
+    border: 1px solid var(--border);
+  }
+  .dns-isp-icon svg {
+    width: 1.6rem;
+    height: 1.6rem;
+    color: var(--text-secondary);
+  }
+  .dns-isp-name {
+    font: 600 0.8rem var(--font-sans);
+  }
+  .dns-isp-note {
+    font: 500 0.68rem var(--font-sans);
+    color: var(--muted);
+    min-height: 1em;
+  }
+  .dns-isp-note-warn {
+    color: var(--color-secondary);
+  }
+
+  /* Two wires per lane: query out (top), answer back (bottom) */
+  .dns-isp-lane {
+    display: flex;
+    flex-direction: column;
+    gap: 1.7rem;
+    min-width: 0;
+  }
+  .dns-isp-wire {
+    position: relative;
+    height: 2px;
+    background: var(--border);
+  }
+  .dns-isp-wire::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    border: 4px solid transparent;
+  }
+  .dns-isp-out::after {
+    right: -2px;
+    border-left-color: var(--color-gray-400);
+    border-right-width: 0;
+  }
+  .dns-isp-back::after {
+    left: -2px;
+    border-right-color: var(--color-gray-400);
+    border-left-width: 0;
+  }
+  .dns-isp-chip {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font: 0.72rem var(--font-mono);
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.14rem 0.45rem;
+    white-space: nowrap;
+    color: var(--color-secondary);
+    z-index: 1;
+  }
+  .dns-isp-cipher {
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .dns-isp-cipher svg {
+    width: 0.7rem;
+    height: 0.7rem;
+  }
+
+  /* Traveling packet dots: out on top wires, back on bottom wires. */
+  .dns-isp-dot {
+    position: absolute;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+  }
+  .dns-isp-out .dns-isp-dot {
+    animation: dns-travel-out 6s infinite var(--ease-smooth);
+    animation-delay: calc(var(--seg) * 1s);
+  }
+  .dns-isp-back .dns-isp-dot {
+    animation: dns-travel-back 6s infinite var(--ease-smooth);
+    animation-delay: calc(3s + (1 - var(--seg)) * 1s);
+  }
+  @keyframes dns-travel-out {
+    0% { left: 0; opacity: 0; }
+    2% { opacity: 1; }
+    15% { opacity: 1; }
+    17% { left: calc(100% - 8px); opacity: 0; }
+    100% { left: calc(100% - 8px); opacity: 0; }
+  }
+  @keyframes dns-travel-back {
+    0% { left: calc(100% - 8px); opacity: 0; }
+    2% { opacity: 1; }
+    15% { opacity: 1; }
+    17% { left: 0; opacity: 0; }
+    100% { left: 0; opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dns-isp-dot { animation: none !important; }
+  }
+
+  .dns-isp-legend {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 1.25rem;
+  }
+  .dns-isp-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 500 0.72rem var(--font-sans);
+    color: var(--muted);
+  }
+  .dns-isp-arrow {
+    width: 1.4rem;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+  .dns-isp-arrow::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    right: -2px;
+    border: 4px solid transparent;
+    border-left-color: var(--color-gray-400);
+    border-right-width: 0;
+  }
+  .dns-isp-arrow-back::after {
+    right: auto;
+    left: -2px;
+    border-left-color: transparent;
+    border-left-width: 0;
+    border-right: 4px solid var(--color-gray-400);
+  }
+
+  .dns-isp-verdict {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 1rem 0 0;
+    line-height: 1.55;
+    border-top: 1px solid var(--border);
+    padding-top: 1rem;
+  }
+
+  @media (max-width: 560px) {
+    .dns-isp { padding: 1.1rem 1rem; }
+    .dns-isp-diagram { gap: 0.4rem; }
+    .dns-isp-icon { width: 2.5rem; height: 2.5rem; }
+    .dns-isp-icon svg { width: 1.25rem; height: 1.25rem; }
+    .dns-isp-chip { font-size: 0.56rem; padding: 0.1rem 0.25rem; }
+    .dns-isp-lane { gap: 1.4rem; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".dns-isp").forEach((root) => {
+    const buttons = root.querySelectorAll<HTMLButtonElement>("[data-mode]");
+    buttons.forEach((btn) =>
+      btn.addEventListener("click", () => {
+        const doh = btn.dataset.mode === "doh";
+        buttons.forEach((b) => b.setAttribute("aria-selected", String(b === btn)));
+        root.querySelectorAll<HTMLElement>("[data-plain]").forEach((el) => (el.hidden = doh));
+        root.querySelectorAll<HTMLElement>("[data-doh]").forEach((el) => (el.hidden = !doh));
+        // Restart the packet animation so the round trip replays from the toggle.
+        root.querySelectorAll<HTMLElement>(".dns-isp-dot").forEach((dot) => {
+          dot.style.animation = "none";
+          void dot.offsetWidth;
+          dot.style.animation = "";
+        });
+      }),
+    );
+  });
+</script>

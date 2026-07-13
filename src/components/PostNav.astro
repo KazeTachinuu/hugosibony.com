@@ -1,0 +1,38 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Link {
+  href: string;
+  title: string;
+}
+
+interface Props {
+  prev?: Link;
+  next?: Link;
+}
+
+const { prev, next } = Astro.props;
+---
+
+{(prev || next) && (
+  <nav class="post-nav" aria-label="Post navigation">
+    {prev ? (
+      <a href={prev.href} class="post-nav-card">
+        <span class="post-nav-label">
+          <Icon name="lucide:arrow-left" size={13} />
+          Previous
+        </span>
+        <span class="post-nav-title">{prev.title}</span>
+      </a>
+    ) : <span />}
+    {next && (
+      <a href={next.href} class="post-nav-card post-nav-next">
+        <span class="post-nav-label">
+          Next
+          <Icon name="lucide:arrow-right" size={13} />
+        </span>
+        <span class="post-nav-title">{next.title}</span>
+      </a>
+    )}
+  </nav>
+)}

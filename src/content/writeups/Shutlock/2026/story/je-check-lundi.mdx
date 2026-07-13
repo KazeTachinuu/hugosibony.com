@@ -1,0 +1,161 @@
+---
+title: "Je Check Lundi"
+categories: "Story"
+cat: "chal"
+ctf: "Shutlock"
+solved: true
+date: 2026-07-07T00:00:00Z
+updated: 2026-07-13
+draft: false
+description: "Un dev pousse un fix vendredi soir en notant \"je check lundi\", puis le repo fuite. Le fix n'a jamais été déployé : l'admin se trouve dans l'historique git."
+difficulty: "⭐"
+---
+
+> Vendredi 13 février, 18h47. Un développeur d'APT-GET pousse ses derniers commits sur le repo de l'annuaire interne avant de filer en week-end. *"Je vérifie lundi"*, note-t-il dans son commit.
+>
+> Il n'y a pas eu de lundi. Le repo a fuité dans la nuit et le service tourne encore.
+>
+> On vous transmet l'archive du dépôt et un accès au service. Trouvez l'administrateur du système.
+
+*Arc Dr Kitrouve.*
+
+<Callout type="info" title="Le challenge">
+
+On récupère une tarball `apt-get-directory.tar.gz` et un accès TCP. Le service est un annuaire d'employés :
+
+```
+$ tar xf apt-get-directory.tar.gz && cd apt-get-directory
+$ nc <ip> <port>
+=== APT-GET — Annuaire Interne ===
+Tapez HELP pour la liste des commandes.
+
+> HELP
+Commandes : HELLO, AUTH <password>, HELP, QUIT
+```
+
+`HELP` ne liste que `HELLO`, `AUTH`, `HELP`, `QUIT`, rien pour lister les utilisateurs. On cherche l'**administrateur**, donc il nous faut une commande cachée et un mot de passe. Tout est dans le dépôt git fourni.
+
+</Callout>
+
+<Callout type="note" title="Lire l'historique git">
+
+```bash
+git log --decorate
+```
+
+Cinq commits, des tags `v0.1`, `v0.2`, `v0.3`. Le commit `security:` est parlant :
+
+```
+security: suppression des outils admin et des credentials en dur
+
+- supprimé la commande LIST_USERS (pas pour la production)
+- mot de passe déplacé en variable d'environnement
+- données employés externalisées en variable d'environnement
+
+TODO: vérifier que LIST_USERS est bien retiré en prod, je check lundi
+```
+
+Il existait une commande `LIST_USERS`, et le dev n'a jamais vérifié qu'elle était retirée en prod.
+
+</Callout>
+
+<Callout type="note" title="LIST_USERS : supprimé du code, pas du serveur">
+
+L'ancienne version du code a tout ce qu'il faut :
+
+```bash
+git show v0.2:challenge.py     # LIST_USERS existe et dump les rôles
+git diff v0.2..v0.3 -- challenge.py
+```
+
+```diff
+         match cmd.upper():
+             case "HELP":
+-                send("Commandes : HELLO, AUTH <password>, LIST_USERS, HELP, QUIT")
++                send("Commandes : HELLO, AUTH <password>, HELP, QUIT")
+
+-            case "LIST_USERS" if not connected:
+-                send("ERREUR : envoyez HELLO d'abord.")
+-            case "LIST_USERS" if not authenticated:
+-                send("ERREUR : authentifiez-vous d'abord.")
+-            case "LIST_USERS":
+-                for name, role in EMPLOYEES:
+-                    send(f"  {name} ({role})")
+-
+             case "QUIT":
+                 send("BYE")
+```
+
+`LIST_USERS` a été **entièrement retiré** en `v0.3`. Mais ce commit date du **vendredi 13 février à 18h47**, et le CI a été supprimé **5 minutes plus tard** (18h52). Le fix n'a jamais été déployé : le serveur tourne toujours sur le code `v0.2`, avec `LIST_USERS` bien vivant. Committer un fix ne suffit pas, il faut le déployer.
+
+</Callout>
+
+<Callout type="warn" title="Fausse piste : la clé de dev">
+
+```bash
+git show v0.2:docker-compose.yml   # PASSWORD=test-api-key-do-not-use
+```
+
+```
+> HELLO
+OK
+> AUTH test-api-key-do-not-use
+DENIED
+```
+
+C'est la clé de développement, pas celle de production.
+
+</Callout>
+
+<Callout type="tip" title="La clé de prod dans le CI supprimé">
+
+Un secret retiré du code reste dans l'historique. On cherche les fichiers **supprimés** :
+
+```bash
+git log --all --diff-filter=D --name-only
+```
+
+`.apt_get_ci/deploy.yml` a été supprimé. On le récupère depuis le commit qui le contenait encore :
+
+```bash
+git show HEAD~2:.apt_get_ci/deploy.yml
+```
+
+```yaml
+deploy:
+  stage: deploy
+  environment: production
+  variables:
+    PASSWORD: "apt_get_prod_a8f3e2b1d4c6"
+```
+
+Le mot de passe de production était en clair dans le pipeline CI/CD.
+
+</Callout>
+
+<Callout type="note" title="Exploitation">
+
+Le serveur tourne encore sur le code `v0.2`, donc `LIST_USERS` répond toujours. On l'utilise avec la clé de prod :
+
+```
+> HELLO
+OK
+> AUTH apt_get_prod_a8f3e2b1d4c6
+WELCOME
+> LIST_USERS
+  Alice Martin (developer)
+  Bob Dupont (developer)
+  Brigitte Legrand (admin)
+  Claire Petit (manager)
+  Thomas Roche (developer)
+```
+
+L'administrateur est **Brigitte Legrand**.
+
+</Callout>
+
+<Callout type="success" title="Réponse">
+
+<Flag flag="Brigitte Legrand" />
+
+</Callout>

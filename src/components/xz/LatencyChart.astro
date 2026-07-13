@@ -1,0 +1,125 @@
+---
+/**
+ * Tiny inline SVG bar chart: sshd login timing, clean vs backdoored.
+ * Numbers verbatim from Andres Freund's oss-security disclosure
+ * (`real 0m0.299s` clean, `real 0m0.807s` backdoored).
+ *   https://www.openwall.com/lists/oss-security/2024/03/29/4
+ * Andres's email did not break out 5.6.0 vs 5.6.1 timings separately,
+ * so we don't either.
+ */
+const bars = [
+  { label: "clean (pre-5.6)", ms: 299, kind: "defender" },
+  { label: "backdoored (5.6.x)", ms: 807, kind: "attacker" },
+];
+const W = 480;
+const H = 200;
+// PAD.l must accommodate the widest left-label ("backdoored (5.6.x)") at
+// font-size 11 in JetBrains Mono (~7.3 px / glyph) plus the 10 px gap to the
+// bar; otherwise the label overflows the viewBox and is clipped in print.
+const PAD = { l: 150, r: 28, t: 16, b: 36 };
+const innerW = W - PAD.l - PAD.r;
+const innerH = H - PAD.t - PAD.b;
+const maxMs = 1000;
+const rowH = innerH / bars.length;
+const barH = rowH * 0.55;
+const ticks = [0, 250, 500, 750, 1000];
+---
+
+<figure
+  class="xz-widget xz-latency"
+  aria-label="sshd connection latency, clean versus backdoored"
+>
+  <svg
+    viewBox={`0 0 ${W} ${H}`}
+    role="img"
+    aria-label="sshd latency comparison"
+    class="xz-latency-svg"
+  >
+    {
+      ticks.map((t) => (
+        <g>
+          <line
+            x1={PAD.l + (t / maxMs) * innerW}
+            x2={PAD.l + (t / maxMs) * innerW}
+            y1={PAD.t}
+            y2={PAD.t + innerH}
+            stroke="currentColor"
+            stroke-opacity="0.08"
+          />
+          <text
+            x={PAD.l + (t / maxMs) * innerW}
+            y={H - 12}
+            text-anchor="middle"
+            font-size="10"
+            fill="var(--muted)"
+            class="xz-latency-tick"
+          >
+            {t}ms
+          </text>
+        </g>
+      ))
+    }
+    {
+      bars.map((b, i) => (
+        <g>
+          <text
+            x={PAD.l - 10}
+            y={PAD.t + i * rowH + rowH / 2 + 4}
+            text-anchor="end"
+            font-size="11"
+            fill="var(--page-text)"
+            class="xz-latency-label"
+          >
+            {b.label}
+          </text>
+          <rect
+            x={PAD.l}
+            y={PAD.t + i * rowH + (rowH - barH) / 2}
+            width={(b.ms / maxMs) * innerW}
+            height={barH}
+            fill={`var(--xz-${b.kind})`}
+            rx="2"
+          />
+          <text
+            x={PAD.l + (b.ms / maxMs) * innerW + 6}
+            y={PAD.t + i * rowH + rowH / 2 + 4}
+            font-size="11"
+            fill="var(--muted)"
+            class="xz-latency-value"
+          >
+            {b.ms}ms
+          </text>
+        </g>
+      ))
+    }
+  </svg>
+  <figcaption>sshd connection time, clean vs backdoored.</figcaption>
+</figure>
+
+<style>
+  .xz-latency {
+    max-width: 560px;
+    text-align: center;
+  }
+  .xz-latency-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+  .xz-latency-svg text {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .xz-latency-label {
+    font-weight: 500;
+  }
+  .xz-latency figcaption {
+    text-align: center;
+    font-size: 0.9375rem;
+    color: var(--text-secondary);
+    font-style: normal;
+    margin-top: 1.1rem;
+    line-height: 1.55;
+  }
+</style>

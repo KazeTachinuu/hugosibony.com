@@ -1,0 +1,26 @@
+---
+/**
+ * Inlined Wikipedia world map (CC0). Russia and Australia get clipped
+ * overlays so their internal timezone splits can be colored separately.
+ *
+ * Calibration: x = lon * 2.975 + 456.2 (from the Russia path bbox).
+ *   60°E ≈ x=634        - Urals (Russia UTC+2/+3 ⇄ +5+ boundary)
+ *   96°E–118°E ≈ x=741–809 - Russia: Irkutsk Oblast + Buryatia (UTC+8)
+ *   113°E–129°E ≈ x=793–841 - Western Australia (Perth, AWST UTC+8)
+ *
+ * China is intentionally NOT split: UTC+8 nationwide since 1949.
+ */
+import worldSvg from './world-map.svg?raw';
+
+const russiaD = worldSvg.match(/<path id="russia" d="([^"]+)"\s*\/>/)?.[1] ?? '';
+const australiaD = worldSvg.match(/<path id="australia" d="([^"]+)"\s*\/>/)?.[1] ?? '';
+
+const overlay = `<defs>
+  <clipPath id="xz-tz-west" clipPathUnits="userSpaceOnUse"><rect x="0" y="0" width="634" height="620" /></clipPath>
+  <clipPath id="xz-tz-irkutsk" clipPathUnits="userSpaceOnUse"><rect x="741" y="0" width="68" height="620" /></clipPath>
+  <clipPath id="xz-tz-wa" clipPathUnits="userSpaceOnUse"><rect x="793" y="0" width="48" height="620" /></clipPath>
+</defs>${russiaD ? `<path d="${russiaD}" class="xz-tz-defender" clip-path="url(#xz-tz-west)" />` : ''}${russiaD ? `<path d="${russiaD}" class="xz-tz-attacker" clip-path="url(#xz-tz-irkutsk)" />` : ''}${australiaD ? `<path d="${australiaD}" class="xz-tz-attacker" clip-path="url(#xz-tz-wa)" />` : ''}`;
+
+const finalSvg = worldSvg.replace(/<\/svg>\s*$/, `${overlay}</svg>`);
+---
+<div class="xz-tzmap-base" set:html={finalSvg} aria-hidden="true"></div>

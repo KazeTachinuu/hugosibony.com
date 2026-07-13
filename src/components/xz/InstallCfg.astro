@@ -1,0 +1,123 @@
+---
+/** Clean report diagram for `_get_cpuia`: what gets found, what gets changed. */
+---
+
+<figure
+  class="xz-install not-prose"
+  role="img"
+  aria-label="Simplified hook installer: find sshd, find RSA_public_decrypt GOT slot, overwrite it with the liblzma stub before RELRO."
+>
+  <p class="xz-install-eyebrow">Hook installer · <code>_get_cpuia</code></p>
+
+  <div class="xz-install-flow">
+    <div class="xz-install-step">
+      <span>01</span>
+      <strong>Find <code>sshd</code></strong>
+      <p>Walk the dynamic linker's loaded-object list.</p>
+    </div>
+    <div class="xz-install-arrow" aria-hidden="true">→</div>
+    <div class="xz-install-step">
+      <span>02</span>
+      <strong>Find GOT slot</strong>
+      <p>Resolve <code>RSA_public_decrypt</code> in <code>sshd</code>.</p>
+    </div>
+    <div class="xz-install-arrow is-hot" aria-hidden="true">→</div>
+    <div class="xz-install-step is-hot">
+      <span>03</span>
+      <strong>Rewrite pointer</strong>
+      <p><code>GOT[...]</code> now points to <code>liblzma_stub</code>.</p>
+    </div>
+  </div>
+
+  <div class="xz-install-note">
+    <strong>Why it works:</strong> IFUNC runs before RELRO. The GOT is still writable; once RELRO locks it, the poisoned pointer is frozen in place.
+  </div>
+</figure>
+
+<style>
+  .xz-install {
+    margin: 1.5rem auto 1.75rem;
+    max-width: 760px;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--xz-attacker);
+    background: var(--page-bg);
+  }
+  .xz-install-eyebrow {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--xz-attacker);
+  }
+  .xz-install code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 0.05em 0.25em;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--page-text) 6%, transparent);
+    color: var(--page-text);
+  }
+  .xz-install-flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 0.65rem;
+    align-items: stretch;
+  }
+  .xz-install-step {
+    padding: 0.8rem 0.85rem;
+    border: 1px solid var(--border);
+    background: var(--subtle-bg);
+  }
+  .xz-install-step span {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--xz-defender);
+  }
+  .xz-install-step strong {
+    display: block;
+    font-size: 1rem;
+    line-height: 1.2;
+    color: var(--page-text);
+  }
+  .xz-install-step p {
+    margin: 0.4rem 0 0;
+    font-size: 0.88rem;
+    line-height: 1.42;
+    color: var(--text-secondary);
+  }
+  .xz-install-step.is-hot {
+    border-color: var(--xz-attacker);
+    background: var(--xz-attacker-bg);
+  }
+  .xz-install-step.is-hot span,
+  .xz-install-step.is-hot strong { color: var(--xz-attacker); }
+  .xz-install-arrow {
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--muted);
+  }
+  .xz-install-arrow.is-hot { color: var(--xz-attacker); }
+  .xz-install-note {
+    margin-top: 0.85rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .xz-install-note strong { color: var(--page-text); }
+
+  @media (max-width: 720px) {
+    .xz-install-flow { grid-template-columns: 1fr; }
+    .xz-install-arrow { transform: rotate(90deg); min-height: 1rem; }
+  }
+</style>
