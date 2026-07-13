@@ -37,6 +37,12 @@ export default {
       return json({ error: 'not found' }, 404);
     }
 
+    // Slugs come from encodeURIComponent'd content ids; reject anything else
+    // so arbitrary keys can't be sprayed into the KV namespace.
+    if (slug.length > 128 || !/^[A-Za-z0-9._%~-]+(\/[A-Za-z0-9._%~-]+)*$/.test(slug)) {
+      return json({ error: 'not found' }, 404);
+    }
+
     if (request.method === 'POST') {
       const current = parseInt(await env.COUNTS.get(key) || '0', 10);
       const next = current + 1;

@@ -189,6 +189,8 @@
   const regNum = (s: string) => parseInt(s.replace('R', ''), 10);
   const signed8 = (v: number) => (v & 0x80 ? v - 256 : v);
   const hex2 = (n: number) => n.toString(16).padStart(2, '0');
+  const escapeHtml = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
   const opsToJSON = (ops: Record<string, number>) =>
     '{' + Object.keys(SPEC).map((k) => `"${k}": [${ops[k]}, ${SPEC[k]}]`).join(', ') + '}';
@@ -201,8 +203,17 @@
   }
   function parseMapping(text: string) {
     const obj = JSON.parse(text);
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('mapping invalide : objet json attendu');
     const opName: Record<number, string> = {}, opSize: Record<number, number> = {}, ops: Record<string, number> = {};
-    for (const k in obj) { const [op, size] = obj[k]; opName[op] = k; opSize[op] = size; ops[k] = op; }
+    for (const k in obj) {
+      const entry = obj[k];
+      if (!Array.isArray(entry) || entry.length !== 2) throw new Error(`mapping invalide : "${k}" doit être [opcode, taille]`);
+      const [op, size] = entry;
+      if (!Number.isInteger(op) || op < 0 || op > 255) throw new Error(`mapping invalide : opcode de "${k}" hors [0, 255]`);
+      if (size !== 2 && size !== 3) throw new Error(`mapping invalide : taille de "${k}" hors [2, 3]`);
+      if (op in opName) throw new Error(`mapping invalide : opcode ${op} dupliqué ("${opName[op]}" et "${k}")`);
+      opName[op] = k; opSize[op] = size; ops[k] = op;
+    }
     return { opName, opSize, ops };
   }
   function assemble(prog: Ins[], ops: Record<string, number>): number[] {
@@ -228,15 +239,16 @@
     } else {
       ops.push(`<span class="t-reg">R${code[pc + 1] & 7}</span>`);
     }
-    return `<span class="t-op">${name}</span>` + ops.join('<span class="t-punct">, </span>');
+    return `<span class="t-op">${escapeHtml(name)}</span>` + ops.join('<span class="t-punct">, </span>');
   }
   function disasm(code: number[], opName: Record<number, string>, opSize: Record<number, number>) {
     const rows: { pc: number; html: string }[] = [];
     let pc = 0;
     while (pc < code.length) {
       const name = opName[code[pc]];
-      if (!name) { rows.push({ pc, html: tokRow(null, 0, code, pc) }); pc++; continue; }
-      const size = opSize[code[pc]];
+      const size = name ? opSize[code[pc]] : 0;
+      // Unknown byte, or an instruction truncated by the end of the bytecode.
+      if (!name || pc + size > code.length) { rows.push({ pc, html: tokRow(null, 0, code, pc) }); pc++; continue; }
       rows.push({ pc, html: tokRow(name, size, code, pc) });
       pc += size;
     }
@@ -247,8 +259,8 @@
     let { sp, pc, zf } = state;
     let changedReg = -1, changedCell = -1;
     const name = opName[code[pc]];
-    if (!name) { state.pc = pc + 1; return { changedReg, changedCell }; }
-    const size = opSize[code[pc]];
+    const size = name ? opSize[code[pc]] : 0;
+    if (!name || pc + size > code.length) { state.pc = pc + 1; return { changedReg, changedCell }; }
     const rd = code[pc + 1] & 7;
     const imm = size === 3 ? code[pc + 2] : code[pc + 1];
     const rs = imm & 7;
@@ -301,8 +313,14 @@
     function decode() {
       stop();
       let tables;
-      try { tables = parseMapping(mapEl.value); } catch { err('mapping json invalide'); return; }
+      try { tables = parseMapping(mapEl.value); } catch (e) {
+        err(e instanceof SyntaxError ? 'mapping json invalide' : (e as Error).message);
+        return;
+      }
       opName = tables.opName; opSize = tables.opSize;
+      // Adopt the pasted mapping for example assembly when it covers the full
+      // instruction set, so examples stay consistent with the shown mapping.
+      if (Object.keys(SPEC).every((k) => k in tables.ops)) ops = tables.ops;
       const hex = hexEl.value.replace(/\s+/g, '');
       if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2) { err('bytecode hex invalide'); return; }
       err(null);
@@ -332,7 +350,9 @@
 
     const one = () => { if (!state || state.pc >= code.length) return false; const c = step(state, code, opName, opSize); render(c.changedReg, c.changedCell); return state.pc < code.length; };
     const stop = () => { if (timer) { clearInterval(timer); timer = null; runBtn.textContent = 'exécuter'; } };
-    const loadExample = (key: string) => { hexEl.value = codeHex(assemble(EXAMPLES[key], ops)); decode(); };
+    // Examples rewrite the mapping field too: the assembled bytes are only
+    // meaningful under the mapping they were assembled with.
+    const loadExample = (key: string) => { mapEl.value = opsToJSON(ops); autosize(); hexEl.value = codeHex(assemble(EXAMPLES[key], ops)); decode(); };
     const clearActive = () => root.querySelectorAll('.vm-ex').forEach((b) => b.removeAttribute('data-active'));
 
     stepBtn.addEventListener('click', () => { stop(); one(); });
