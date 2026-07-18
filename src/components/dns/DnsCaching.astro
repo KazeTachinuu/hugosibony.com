@@ -1,0 +1,693 @@
+---
+/**
+ * DNS caching & TTL, made watchable. Look up `hugosibony.com` and see the two
+ * regimes play out: a cold cache MISS walks the full resolution and stores the
+ * record with a TTL; while that TTL counts down every further lookup is an
+ * instant HIT served from cache; at zero the entry expires and the next lookup
+ * misses again.
+ *
+ * The TTL is compressed to 30s so the countdown is watchable; the real
+ * hugosibony.com A record uses 300s. Everything else is real and checked against
+ * RFC 1035 (TTL semantics) and RFC 2308 (negative caching). The A record is
+ * the real hugosibony.com answer (104.21.86.12, Cloudflare).
+ */
+import { Icon } from 'astro-icon/components';
+
+const TTL = 30; // seconds, shortened for the demo (real record ≈ 300s)
+const ANSWER_IP = '104.21.86.12';
+
+// Where a cached copy of the answer can live, from closest to you outward.
+const LAYERS = [
+  {
+    id: 'browser',
+    label: 'Browser cache',
+    sub: 'per-app, seconds–minutes',
+    icon: 'lucide:app-window',
+  },
+  {
+    id: 'stub',
+    label: 'OS stub-resolver cache',
+    sub: 'per-machine',
+    icon: 'lucide:laptop',
+  },
+  {
+    id: 'recursive',
+    label: 'Recursive resolver cache',
+    sub: 'shared by everyone using it',
+    icon: 'lucide:server',
+    big: true,
+  },
+];
+
+// The short "cold walk" shown on a miss before the answer lands.
+const HOPS = ['root', '.org', 'authoritative'];
+---
+
+<figure class="dnsc" aria-label="Interactive DNS caching and TTL demo">
+  <div class="dnsc-head">
+    <div class="dnsc-title-wrap">
+      <h4 class="dnsc-title">Caching &amp; TTL</h4>
+      <p class="dnsc-sub">
+        The first lookup does the work; the rest ride the cache until its
+        time-to-live runs out.
+      </p>
+    </div>
+  </div>
+
+  {/* Control + live status row */}
+  <div class="dnsc-panel">
+    <button type="button" class="dnsc-btn" data-lookup>
+      <Icon name="lucide:search" size={16} />
+      <span class="dnsc-btn-text">Look up <code>hugosibony.com</code></span>
+    </button>
+
+    <div class="dnsc-stats" aria-hidden="true">
+      <span class="dnsc-stat">
+        <span class="dnsc-stat-num" data-hits>0</span>
+        <span class="dnsc-stat-label">cache hits</span>
+      </span>
+      <span class="dnsc-stat">
+        <span class="dnsc-stat-num" data-misses>0</span>
+        <span class="dnsc-stat-label">misses</span>
+      </span>
+    </div>
+  </div>
+
+  {/* The single cache entry the demo tracks */}
+  <div class="dnsc-entry" data-entry data-state="empty">
+    <div class="dnsc-entry-top">
+      <span class="dnsc-badge" data-badge>
+        <Icon name="lucide:circle-dashed" size={13} class="dnsc-badge-icon dnsc-icon-empty" />
+        <Icon name="lucide:search" size={13} class="dnsc-badge-icon dnsc-icon-miss" />
+        <Icon name="lucide:zap" size={13} class="dnsc-badge-icon dnsc-icon-hit" />
+        <Icon name="lucide:circle-off" size={13} class="dnsc-badge-icon dnsc-icon-expired" />
+        <span class="dnsc-badge-text" data-badge-text>Cache empty</span>
+      </span>
+      <span class="dnsc-remaining" data-remaining aria-hidden="true"></span>
+    </div>
+
+    <code class="dnsc-record" data-record>
+      <span class="dnsc-record-empty">no cached record, click look up</span>
+      <span class="dnsc-record-full">
+        <span class="dnsc-rr-name">hugosibony.com.</span>
+        <span class="dnsc-rr-ttl" data-record-ttl>{TTL}</span>
+        <span class="dnsc-rr-rest">IN A {ANSWER_IP}</span>
+      </span>
+    </code>
+
+    {/* Cold-walk indicator, only visible mid-miss */}
+    <div class="dnsc-walk" data-walk aria-hidden="true">
+      <span class="dnsc-walk-label">resolving…</span>
+      {HOPS.map((h, n) => (
+        <>
+          {n > 0 && <Icon name="lucide:chevron-right" size={13} class="dnsc-walk-arrow" />}
+          <span class="dnsc-walk-hop" data-walk-hop={n}>{h}</span>
+        </>
+      ))}
+    </div>
+
+    {/* TTL countdown bar */}
+    <div class="dnsc-ttl">
+      <div class="dnsc-ttl-track">
+        <div class="dnsc-ttl-fill" data-ttl-fill></div>
+      </div>
+      <span class="dnsc-ttl-label">
+        TTL <span data-ttl-num>{TTL}</span>s
+      </span>
+    </div>
+  </div>
+
+  <p class="dnsc-note">
+    <Icon name="lucide:info" size={13} class="dnsc-note-icon" />
+    <span>
+      TTL is in <strong>seconds</strong>, set by the zone operator. This demo
+      uses <strong>30&nbsp;s</strong> so it&rsquo;s watchable, the real
+      hugosibony.com record is 300&nbsp;s. A hit serves the <em>remaining</em> TTL;
+      it never resets the clock.
+    </span>
+  </p>
+
+  {/* Where caches live */}
+  <div class="dnsc-layers">
+    <span class="dnsc-layers-title">Where the answer gets cached</span>
+    <ul class="dnsc-layer-list">
+      {LAYERS.map((l, n) => (
+        <li class="dnsc-layer" data-big={l.big ? '' : undefined}>
+          <span class="dnsc-layer-icon"><Icon name={l.icon} size={17} /></span>
+          <span class="dnsc-layer-body">
+            <span class="dnsc-layer-label">{l.label}</span>
+            <span class="dnsc-layer-sub">{l.sub}</span>
+          </span>
+          {n < LAYERS.length - 1 && (
+            <Icon name="lucide:arrow-down" size={14} class="dnsc-layer-sep" />
+          )}
+        </li>
+      ))}
+    </ul>
+    <p class="dnsc-layers-foot">
+      Each layer counts down <em>its own copy</em> of the TTL independently. The
+      recursive resolver&rsquo;s cache is the big shared one, one miss there
+      spares every client behind it.
+    </p>
+  </div>
+
+  <p class="dnsc-neg">
+    <Icon name="lucide:ban" size={13} class="dnsc-neg-icon" />
+    <span>
+      <strong>Negative caching:</strong> &ldquo;does not exist&rdquo; answers
+      (NXDOMAIN / no-data) are cached too, for the time set by the zone&rsquo;s
+      SOA <em>minimum</em> field (RFC&nbsp;2308), so a typo stays fast-failing,
+      not re-queried every time.
+    </span>
+  </p>
+
+  <p class="dnsc-tradeoff">
+    Lower TTL = fresher records but more queries. Higher TTL = fewer queries but
+    changes propagate more slowly.
+  </p>
+</figure>
+
+<style>
+  .dnsc {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.5rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+
+  .dnsc-head { margin-bottom: 1.1rem; }
+  .dnsc-title {
+    font: 600 1.05rem var(--font-sans);
+    color: var(--page-text);
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.01em;
+  }
+  .dnsc-sub {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  /* Control panel */
+  .dnsc-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.1rem;
+  }
+  .dnsc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 42px;
+    padding: 0 1.05rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+    border-radius: 10px;
+    background: var(--page-bg);
+    color: var(--page-text);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-smooth),
+      background var(--duration-fast) var(--ease-smooth),
+      transform var(--duration-fast) var(--ease-smooth);
+  }
+  .dnsc-btn:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--page-bg));
+  }
+  .dnsc-btn:active { transform: translateY(1px); }
+  .dnsc-btn:disabled { cursor: progress; opacity: 0.65; }
+  .dnsc-btn-text { font: 600 0.86rem var(--font-sans); }
+  .dnsc-btn code {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--accent);
+  }
+
+  .dnsc-stats { display: flex; gap: 1.1rem; }
+  .dnsc-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+  }
+  .dnsc-stat-num {
+    font: 700 1.35rem var(--font-mono);
+    color: var(--page-text);
+    font-variant-numeric: tabular-nums;
+  }
+  .dnsc-stat:first-child .dnsc-stat-num { color: var(--accent); }
+  .dnsc-stat-label {
+    font: 600 0.58rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.1rem;
+  }
+
+  /* Cache entry */
+  .dnsc-entry {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--page-bg);
+    padding: 1rem 1.1rem 1.1rem;
+    transition: border-color var(--duration-fast) var(--ease-smooth),
+      background var(--duration-fast) var(--ease-smooth);
+  }
+  .dnsc-entry[data-state='miss'] {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  }
+  .dnsc-entry[data-state='cached'] {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+  .dnsc-entry[data-state='hit'] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 7%, var(--page-bg));
+  }
+  .dnsc-entry[data-state='expired'] {
+    border-color: var(--border);
+    background: color-mix(in srgb, var(--muted) 6%, var(--page-bg));
+    opacity: 0.72;
+  }
+
+  .dnsc-entry-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .dnsc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.68rem var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--subtle-bg);
+  }
+  .dnsc-badge-icon { display: none; flex-shrink: 0; }
+  .dnsc-entry[data-state='empty'] .dnsc-icon-empty { display: inline-block; }
+  .dnsc-entry[data-state='miss'] .dnsc-icon-miss { display: inline-block; }
+  .dnsc-entry[data-state='cached'] .dnsc-icon-hit { display: inline-block; }
+  .dnsc-entry[data-state='hit'] .dnsc-icon-hit { display: inline-block; }
+  .dnsc-entry[data-state='expired'] .dnsc-icon-expired { display: inline-block; }
+
+  .dnsc-entry[data-state='miss'] .dnsc-badge {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .dnsc-entry[data-state='cached'] .dnsc-badge,
+  .dnsc-entry[data-state='hit'] .dnsc-badge {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .dnsc-entry[data-state='expired'] .dnsc-badge {
+    color: var(--muted);
+  }
+
+  .dnsc-remaining {
+    font: 600 0.72rem var(--font-mono);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dnsc-record {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    word-break: break-word;
+  }
+  .dnsc-record-empty { color: var(--muted); font-style: normal; }
+  .dnsc-record-full { display: none; }
+  .dnsc-entry[data-state='empty'] .dnsc-record-full { display: none; }
+  .dnsc-entry:not([data-state='empty']) .dnsc-record-empty { display: none; }
+  .dnsc-entry:not([data-state='empty']) .dnsc-record-full { display: inline; }
+  .dnsc-rr-name { color: var(--page-text); }
+  .dnsc-rr-ttl {
+    color: var(--accent);
+    font-weight: 600;
+    padding: 0 0.15rem;
+  }
+  .dnsc-entry[data-state='expired'] .dnsc-rr-ttl,
+  .dnsc-entry[data-state='expired'] .dnsc-rr-name { color: var(--muted); }
+  .dnsc-entry[data-state='expired'] .dnsc-record-full { text-decoration: line-through; }
+
+  /* flash on a hit */
+  .dnsc-entry[data-flash] { animation: dnsc-flash 0.5s var(--ease-smooth); }
+  @keyframes dnsc-flash {
+    0% { background: color-mix(in srgb, var(--accent) 22%, var(--page-bg)); }
+    100% { background: color-mix(in srgb, var(--accent) 7%, var(--page-bg)); }
+  }
+
+  /* Cold-walk indicator */
+  .dnsc-walk {
+    display: none;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.7rem;
+    font-family: var(--font-mono);
+  }
+  .dnsc-entry[data-state='miss'] .dnsc-walk { display: flex; }
+  .dnsc-walk-label {
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-right: 0.15rem;
+  }
+  .dnsc-walk-hop {
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 0.12rem 0.4rem;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    transition: color var(--duration-fast) var(--ease-smooth),
+      border-color var(--duration-fast) var(--ease-smooth),
+      background var(--duration-fast) var(--ease-smooth);
+  }
+  .dnsc-walk-hop[data-active] {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+  .dnsc-walk-arrow { color: var(--muted); flex-shrink: 0; }
+
+  /* TTL bar */
+  .dnsc-ttl {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-top: 0.9rem;
+  }
+  .dnsc-ttl-track {
+    flex: 1;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--subtle-bg);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .dnsc-ttl-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: var(--accent);
+    transform-origin: left center;
+    transition: width 1s linear, background var(--duration-fast) var(--ease-smooth);
+  }
+  .dnsc-entry[data-state='expired'] .dnsc-ttl-fill,
+  .dnsc-entry[data-state='empty'] .dnsc-ttl-fill { background: var(--color-gray-400); }
+  .dnsc-ttl-label {
+    font: 600 0.68rem var(--font-mono);
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .dnsc-ttl-label [data-ttl-num] { color: var(--text-secondary); }
+
+  /* Notes */
+  .dnsc-note,
+  .dnsc-neg {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 1rem 0 0;
+    padding: 0.75rem 0.85rem;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--subtle-bg) 55%, transparent);
+    border: 1px solid var(--border);
+  }
+  .dnsc-note-icon { color: var(--accent); flex-shrink: 0; margin-top: 0.15rem; }
+  .dnsc-neg-icon { color: var(--muted); flex-shrink: 0; margin-top: 0.15rem; }
+  .dnsc-note strong,
+  .dnsc-neg strong { color: var(--page-text); font-weight: 600; }
+
+  /* Layers diagram */
+  .dnsc-layers { margin-top: 1.35rem; }
+  .dnsc-layers-title {
+    display: block;
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.6rem;
+  }
+  .dnsc-layer-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .dnsc-layer {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--page-bg);
+    margin-bottom: 1.15rem;
+  }
+  .dnsc-layer:last-child { margin-bottom: 0; }
+  .dnsc-layer[data-big] {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 5%, var(--page-bg));
+  }
+  .dnsc-layer-icon {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: var(--subtle-bg);
+    color: var(--text-secondary);
+  }
+  .dnsc-layer[data-big] .dnsc-layer-icon {
+    background: var(--accent);
+    color: #fff;
+  }
+  .dnsc-layer-body { display: flex; flex-direction: column; min-width: 0; }
+  .dnsc-layer-label { font: 600 0.82rem var(--font-sans); color: var(--page-text); }
+  .dnsc-layer-sub { font: 0.68rem var(--font-mono); color: var(--muted); }
+  .dnsc-layer-sep {
+    position: absolute;
+    left: 1.6rem;
+    bottom: -1.05rem;
+    color: var(--muted);
+    z-index: 1;
+  }
+  .dnsc-layers-foot {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0.75rem 0 0;
+  }
+
+  .dnsc-tradeoff {
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--muted);
+    margin: 1rem 0 0;
+    font-style: italic;
+  }
+
+  @media (max-width: 560px) {
+    .dnsc { padding: 1.1rem 1rem 1.2rem; }
+    .dnsc-panel { gap: 0.7rem; }
+    .dnsc-btn { width: 100%; justify-content: center; }
+    .dnsc-stats { width: 100%; justify-content: flex-start; gap: 1.5rem; }
+    .dnsc-entry-top { flex-wrap: wrap; gap: 0.4rem; }
+    .dnsc-ttl { flex-wrap: wrap; }
+    .dnsc-ttl-track { flex-basis: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dnsc-btn,
+    .dnsc-entry,
+    .dnsc-walk-hop,
+    .dnsc-ttl-fill { transition: none; }
+    .dnsc-entry[data-flash] { animation: none; }
+  }
+</style>
+
+<script>
+  const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  document.querySelectorAll<HTMLElement>('.dnsc').forEach((root) => {
+    const TTL = 30;
+    const btn = root.querySelector<HTMLButtonElement>('[data-lookup]');
+    const btnText = root.querySelector<HTMLElement>('.dnsc-btn-text');
+    const entry = root.querySelector<HTMLElement>('[data-entry]');
+    const badgeText = root.querySelector<HTMLElement>('[data-badge-text]');
+    const remaining = root.querySelector<HTMLElement>('[data-remaining]');
+    const fill = root.querySelector<HTMLElement>('[data-ttl-fill]');
+    const ttlNum = root.querySelector<HTMLElement>('[data-ttl-num]');
+    const hitsEl = root.querySelector<HTMLElement>('[data-hits]');
+    const missesEl = root.querySelector<HTMLElement>('[data-misses]');
+    const walkHops = [...root.querySelectorAll<HTMLElement>('[data-walk-hop]')];
+    if (!btn || !entry || !fill) return;
+
+    let hits = 0;
+    let misses = 0;
+    let secondsLeft = 0;
+    let countdown: ReturnType<typeof setInterval> | null = null;
+    const walkTimers: ReturnType<typeof setTimeout>[] = [];
+    let resolving = false;
+
+    function setState(s: string) {
+      entry!.setAttribute('data-state', s);
+    }
+
+    function setBadge(text: string) {
+      if (badgeText) badgeText.textContent = text;
+    }
+
+    function setRemaining() {
+      if (remaining)
+        remaining.textContent = secondsLeft > 0 ? `${secondsLeft}s left` : '';
+    }
+
+    function paintBar() {
+      const pct = Math.max(0, (secondsLeft / TTL) * 100);
+      // linear transition set in CSS handles the smooth drain; reduced motion
+      // gets a stepped bar (no width transition) but the same values.
+      fill!.style.width = `${pct}%`;
+      if (ttlNum) ttlNum.textContent = String(Math.max(0, secondsLeft));
+    }
+
+    function flash() {
+      if (REDUCED) return;
+      entry!.removeAttribute('data-flash');
+      // force reflow so the animation restarts on repeated hits
+      void entry!.offsetWidth;
+      entry!.setAttribute('data-flash', '');
+    }
+
+    function stopCountdown() {
+      if (countdown) clearInterval(countdown);
+      countdown = null;
+    }
+
+    function expire() {
+      stopCountdown();
+      secondsLeft = 0;
+      setState('expired');
+      setBadge('Expired, evicted');
+      setRemaining();
+      paintBar();
+    }
+
+    function startCountdown() {
+      stopCountdown();
+      secondsLeft = TTL;
+      setRemaining();
+      // fill starts full, drains to 0 over TTL seconds
+      fill!.style.width = '100%';
+      if (ttlNum) ttlNum.textContent = String(TTL);
+      countdown = setInterval(() => {
+        secondsLeft -= 1;
+        setRemaining();
+        paintBar();
+        if (secondsLeft <= 0) expire();
+      }, 1000);
+    }
+
+    function clearWalk() {
+      walkTimers.forEach((t) => clearTimeout(t));
+      walkTimers.length = 0;
+      walkHops.forEach((h) => h.removeAttribute('data-active'));
+    }
+
+    function doMiss() {
+      resolving = true;
+      misses += 1;
+      if (missesEl) missesEl.textContent = String(misses);
+      setState('miss');
+      setBadge('MISS, resolving');
+      remaining && (remaining.textContent = '');
+      fill!.style.width = '0%';
+      if (ttlNum) ttlNum.textContent = String(TTL);
+      btn!.disabled = true;
+
+      const WALK_MS = REDUCED ? 0 : 320;
+      clearWalk();
+
+      const finish = () => {
+        clearWalk();
+        setState('cached');
+        setBadge('Cached, fresh');
+        startCountdown();
+        btn!.disabled = false;
+        resolving = false;
+      };
+
+      if (REDUCED) {
+        // still functional, just immediate
+        finish();
+        return;
+      }
+
+      walkHops.forEach((hop, n) => {
+        walkTimers.push(
+          setTimeout(() => {
+            walkHops.forEach((h) => h.removeAttribute('data-active'));
+            hop.setAttribute('data-active', '');
+          }, n * WALK_MS)
+        );
+      });
+      walkTimers.push(setTimeout(finish, walkHops.length * WALK_MS + 260));
+    }
+
+    function doHit() {
+      hits += 1;
+      if (hitsEl) hitsEl.textContent = String(hits);
+      setState('hit');
+      setBadge('HIT, from cache');
+      setRemaining();
+      flash();
+      // a hit serves the remaining TTL; it does NOT reset the clock.
+      // fall back to the 'cached' visual after the flash so the countdown
+      // colour stays consistent.
+      window.setTimeout(() => {
+        if (secondsLeft > 0) {
+          setState('cached');
+          setBadge('Cached, fresh');
+        }
+      }, 650);
+    }
+
+    btn.addEventListener('click', () => {
+      if (resolving) return;
+      // HIT only while a live entry still has time left.
+      if (secondsLeft > 0 && entry!.getAttribute('data-state') !== 'expired') {
+        doHit();
+      } else {
+        doMiss();
+      }
+    });
+  });
+</script>

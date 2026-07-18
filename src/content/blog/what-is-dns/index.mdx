@@ -1,0 +1,54 @@
+---
+title: "How DNS works, end to end"
+description: "DNS 101: why it exists, the domain namespace, the recursive lookup through root, TLD, and authoritative servers, and caching. Part 1 of a DNS series."
+date: 2026-07-17T13:00:00Z
+updated: 2026-07-18
+categories: ["notes"]
+tags: ["dns", "networking"]
+---
+
+import DnsJourney from '~/components/dns/DnsJourney.astro';
+import DnsCaching from '~/components/dns/DnsCaching.astro';
+
+You type `hugosibony.com`, hit Enter, the page loads. In between, your machine hits one problem: it connects to IP addresses, and `hugosibony.com` isn't one. **DNS** turns the name into an address like `172.67.213.189`.
+
+Addresses are built for machines. You won't memorize `172.67.213.189`, let alone its IPv6 form `2606:4700:3030::6815:560c`, and it changes when the site moves servers. DNS lets the name stay put while the number underneath changes.
+
+DNS is a distributed system, not a lookup table, because a lookup table doesn't scale. In the 1980s every host on the ARPANET shared one hand-maintained `HOSTS.TXT` file, downloaded from a single server. It buckled as the network grew: name collisions, stale copies, one machine feeding everyone. So DNS replaced it with a distributed, delegated, cached tree.
+
+## The name is a tree
+
+Read `www.hugosibony.com` right to left. At the top sits the invisible **root**, written as a trailing dot. Under it, the **top-level domain** `com`. Under that, the registered **domain** `hugosibony`. Under that, any **subdomains** the owner creates, like `www`. Each dot-separated piece is a **label** (up to 63 bytes; 255 for the whole name). Written in full, `www.hugosibony.com.`, it is a **fully-qualified domain name**.
+
+Each level hands control of the level below to someone else, a **delegation**, so no single server has to know everything. That tree is exactly the path a lookup walks: root, then `com`, then `hugosibony`.
+
+## The lookup
+
+Your machine has the name and needs the address. Press Enter:
+
+<DnsJourney />
+
+No server holds the whole map. Each one points a step closer (a **referral**) until the **authoritative** server, which owns the domain, returns the address. Your browser sends one **recursive** query ("find this for me"); the resolver does the **iterative** queries up the tree for you.
+
+See it yourself: `dig hugosibony.com` runs the same lookup in a terminal.
+
+## Caching
+
+Every answer carries a TTL: how long it may be cached. Caches sit in your browser, your OS, and the shared one in your resolver. The first lookup misses and does the work; the rest are instant until the clock runs out. It's also why a DNS change takes a while to land: old answers stay live until their TTL expires.
+
+<DnsCaching />
+
+## References
+
+- [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034) and [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035): DNS concepts, the namespace, and the recursive/iterative model. RFC 1034 §1 explains why the host table gave way to a distributed database.
+- [RFC 8499](https://www.rfc-editor.org/rfc/rfc8499): DNS terminology (stub resolver, recursive resolver, zone, referral, glue).
+- [RFC 2308](https://www.rfc-editor.org/rfc/rfc2308): negative caching and how TTLs bound it.
+
+## DNS series
+
+1. **How DNS works** (this post)
+2. [Inside a DNS packet](/blog/dns-packet/)
+3. [Encrypting DNS](/blog/dns-encryption/)
+4. [How malware abuses DNS](/blog/dns-malware/)
+
+Practical companion: [Which resolver to choose](/blog/public-dns-resolvers/).

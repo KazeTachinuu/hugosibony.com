@@ -1,0 +1,352 @@
+---
+/**
+ * "You hit Enter. Then what?": one real lookup, traced end to end.
+ * A mock browser types hugosibony.com and the query travels through the four
+ * servers until an IP comes back and the page loads. Minimal on purpose:
+ * this is the one running example the whole article hangs on.
+ *
+ * Real values, verified live over DoH: hugosibony.com is on Cloudflare, so it
+ * resolves to a Cloudflare anycast IP (172.67.213.189, TTL 300) and its
+ * nameservers are brad/tori.ns.cloudflare.com.
+ */
+import { Icon } from 'astro-icon/components';
+
+const STOPS = [
+  {
+    id: 'browser', icon: 'lucide:app-window', who: 'Your browser',
+    tag: 'recursive query · RD=1',
+    role: 'Needs an IP, not a name. Sends one query: "do the whole lookup for me."',
+    ask: 'hugosibony.com A?',
+    got: null,
+  },
+  {
+    id: 'resolver', icon: 'lucide:server', who: 'The resolver',
+    tag: 'iterative queries · RD=0',
+    role: 'Your ISP, or something like 1.1.1.1. Cache is empty, so it walks the tree itself, one server at a time.',
+    ask: 'hugosibony.com A?',
+    got: null,
+  },
+  {
+    id: 'root', icon: 'lucide:globe', who: 'Root server',
+    role: "Doesn't have the IP, but knows which servers run .com.",
+    ask: null,
+    got: 'Ask the .com servers.',
+  },
+  {
+    id: 'tld', icon: 'lucide:folder-tree', who: '.com server',
+    role: "Doesn't have it either, but knows the hugosibony.com nameservers.",
+    ask: null,
+    got: 'Ask the hugosibony.com nameservers.',
+  },
+  {
+    id: 'auth', icon: 'lucide:badge-check', who: 'Authoritative server',
+    role: 'Cloudflare runs the hugosibony.com zone. It has the answer.',
+    ask: null,
+    got: 'hugosibony.com. 300 IN A 172.67.213.189',
+  },
+];
+---
+
+<figure class="jny" aria-label="One DNS lookup, from typing a URL to the page loading">
+  {/* Mock browser */}
+  <div class="jny-browser">
+    <div class="jny-chrome">
+      <span class="jny-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <div class="jny-omni">
+        <Icon name="lucide:lock" size={12} class="jny-omni-lock" />
+        <span class="jny-omni-url">hugosibony.com</span>
+        <span class="jny-omni-status" data-status>press Enter</span>
+      </div>
+      <button type="button" class="jny-go" data-go>
+        <Icon name="lucide:corner-down-left" size={15} />
+        <span>Enter</span>
+      </button>
+    </div>
+    <div class="jny-viewport" data-viewport>
+      <div class="jny-blank">
+        <Icon name="lucide:globe" size={22} />
+        <span>Press Enter to look up hugosibony.com.</span>
+      </div>
+      <div class="jny-loaded">
+        <span class="jny-loaded-ip"><Icon name="lucide:circle-check" size={15} /> connected to <code>172.67.213.189</code></span>
+        <span class="jny-loaded-sub">The name is now an IP. The browser can connect.</span>
+      </div>
+    </div>
+  </div>
+
+  {/* The journey */}
+  <ol class="jny-steps">
+    {STOPS.map((s, i) => (
+      <li class="jny-step" data-step={i}>
+        <span class="jny-node"><Icon name={s.icon} size={17} /></span>
+        <div class="jny-body">
+          {s.tag && <span class="jny-tag">{s.tag}</span>}
+          <p class="jny-who">{s.who}</p>
+          <p class="jny-role">{s.role}</p>
+          {s.ask && <code class="jny-msg jny-ask"><Icon name="lucide:arrow-up-right" size={12} />{s.ask}</code>}
+          {s.got && <code class:list={['jny-msg jny-got', s.id === 'auth' && 'is-answer']}><Icon name="lucide:arrow-down-left" size={12} />{s.got}</code>}
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  <div class="jny-controls">
+    <button type="button" class="jny-replay" data-replay>
+      <Icon name="lucide:rotate-ccw" size={14} /> Replay
+    </button>
+    <p class="jny-cache">
+      <Icon name="lucide:zap" size={13} />
+      <span>The resolver now <strong>caches</strong> this for the record's TTL (300s), so the next lookup skips the whole trip.</span>
+    </p>
+  </div>
+</figure>
+
+<style>
+  .jny {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+  }
+
+  /* Mock browser */
+  .jny-browser {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--page-bg);
+    box-shadow: 0 1px 2px hsl(225 25% 20% / 0.04);
+  }
+  .jny-chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--subtle-bg);
+  }
+  .jny-dots { display: inline-flex; gap: 0.4rem; flex-shrink: 0; }
+  .jny-dots i { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--border); }
+  .jny-omni {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    font-family: var(--font-mono);
+  }
+  .jny-omni-lock { color: var(--muted); flex-shrink: 0; }
+  .jny-omni-url { font-size: 0.85rem; color: var(--page-text); }
+  .jny-omni-status {
+    margin-left: auto;
+    font-size: 0.68rem;
+    color: var(--muted);
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+  }
+  .jny-omni-status[data-state='resolving'] { color: var(--accent); }
+  .jny-omni-status[data-state='done'] { color: var(--accent); }
+  .jny-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font: 600 0.78rem var(--font-sans);
+    cursor: pointer;
+    transition: filter 0.15s var(--ease-smooth);
+  }
+  .jny-go:hover { filter: brightness(1.08); }
+  .jny-go:disabled { opacity: 0.45; cursor: default; }
+
+  .jny-viewport {
+    position: relative;
+    min-height: 5rem;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem 1rem;
+    text-align: center;
+  }
+  .jny-blank, .jny-loaded { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+  .jny-blank { color: var(--muted); font-size: 0.85rem; max-width: 22rem; }
+  .jny-blank :global(svg) { color: var(--color-gray-400); }
+  .jny-loaded { display: none; }
+  .jny-loaded-ip { display: inline-flex; align-items: center; gap: 0.4rem; font: 600 0.95rem var(--font-mono); color: var(--accent); }
+  .jny-loaded-sub { font-size: 0.82rem; color: var(--muted); }
+  .jny[data-done] .jny-blank { display: none; }
+  .jny[data-done] .jny-loaded { display: flex; }
+
+  /* Journey */
+  .jny-steps {
+    list-style: none;
+    margin: 1.5rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .jny-step {
+    display: grid;
+    grid-template-columns: 2.4rem 1fr;
+    gap: 0.85rem;
+    padding: 0 0 1.4rem;
+    position: relative;
+    opacity: 0.28;
+    transition: opacity 0.4s var(--ease-smooth);
+  }
+  /* connector line */
+  .jny-step::before {
+    content: '';
+    position: absolute;
+    left: calc(1.2rem - 0.5px);
+    top: 2.4rem;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .jny-step:last-child { padding-bottom: 0; }
+  .jny-step:last-child::before { display: none; }
+  .jny-step[data-on] { opacity: 1; }
+
+  .jny-node {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    z-index: 1;
+    transition: border-color 0.4s var(--ease-smooth), background 0.4s var(--ease-smooth), color 0.4s var(--ease-smooth);
+  }
+  .jny-step[data-on] .jny-node { border-color: var(--accent); color: var(--accent); }
+  .jny-step[data-on]:last-child .jny-node { background: var(--accent); color: #fff; }
+
+  .jny-body { min-width: 0; padding-top: 0.25rem; }
+  .jny-tag {
+    display: inline-block;
+    font: 600 0.58rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .jny-who { font: 600 0.95rem var(--font-sans); color: var(--page-text); margin: 0; }
+  .jny-role { font-size: 0.86rem; line-height: 1.5; color: var(--text-secondary); margin: 0.15rem 0 0; }
+  .jny-msg {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+    padding: 0.32rem 0.6rem;
+    border-radius: 7px;
+    font: 0.78rem var(--font-mono);
+    border: 1px solid var(--border);
+    background: var(--code-bg, var(--subtle-bg));
+    color: var(--text-secondary);
+    max-width: 100%;
+    word-break: break-word;
+  }
+  .jny-msg :global(svg) { flex-shrink: 0; color: var(--muted); }
+  .jny-ask :global(svg) { color: var(--muted); }
+  .jny-got.is-answer {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--page-bg));
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .jny-got.is-answer :global(svg) { color: var(--accent); }
+
+  .jny-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+  }
+  .jny-replay {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    padding: 0.45rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--page-bg);
+    color: var(--text-secondary);
+    font: 500 0.8rem var(--font-sans);
+    cursor: pointer;
+    transition: border-color 0.15s var(--ease-smooth), color 0.15s var(--ease-smooth);
+  }
+  .jny-replay:hover { border-color: var(--accent); color: var(--page-text); }
+  .jny-cache {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .jny-cache :global(svg) { flex-shrink: 0; color: var(--accent); }
+  .jny-cache strong { color: var(--text-secondary); }
+
+  @media (max-width: 560px) {
+    .jny-go span { display: none; }
+    .jny-step { grid-template-columns: 2rem 1fr; gap: 0.7rem; }
+    .jny-step::before { left: calc(1rem - 0.5px); }
+    .jny-node { width: 2rem; height: 2rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .jny-step, .jny-node { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.jny').forEach((root) => {
+    const steps = [...root.querySelectorAll<HTMLElement>('.jny-step')];
+    const goBtn = root.querySelector<HTMLButtonElement>('[data-go]');
+    const replayBtn = root.querySelector<HTMLButtonElement>('[data-replay]');
+    const status = root.querySelector<HTMLElement>('[data-status]');
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let timers: ReturnType<typeof setTimeout>[] = [];
+
+    function reset() {
+      timers.forEach(clearTimeout);
+      timers = [];
+      root.removeAttribute('data-done');
+      steps.forEach((s) => s.removeAttribute('data-on'));
+      if (status) { status.textContent = 'press Enter'; status.removeAttribute('data-state'); }
+      if (goBtn) goBtn.disabled = false;
+    }
+
+    function run() {
+      reset();
+      if (goBtn) goBtn.disabled = true;
+      if (status) { status.textContent = 'resolving…'; status.dataset.state = 'resolving'; }
+      const gap = reduce ? 0 : 700;
+      steps.forEach((s, i) => {
+        timers.push(setTimeout(() => s.setAttribute('data-on', ''), gap * (i + 1)));
+      });
+      timers.push(
+        setTimeout(() => {
+          root.setAttribute('data-done', '');
+          if (status) { status.textContent = 'done · 172.67.213.189'; status.dataset.state = 'done'; }
+          if (goBtn) goBtn.disabled = false;
+        }, gap * (steps.length + 1)),
+      );
+    }
+
+    goBtn?.addEventListener('click', run);
+    replayBtn?.addEventListener('click', run);
+  });
+</script>

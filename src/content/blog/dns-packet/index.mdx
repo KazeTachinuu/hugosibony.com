@@ -1,0 +1,51 @@
+---
+title: "Inside a DNS packet"
+description: "The DNS message format field by field: the 12-byte header and its flags, the question, the answer records, and EDNS. Plus the record types a domain actually holds. Part 2 of a DNS series."
+date: 2026-07-17T12:00:00Z
+updated: 2026-07-18
+categories: ["notes"]
+tags: ["dns", "networking"]
+---
+
+import DnsMessage from '~/components/dns/DnsMessage.astro';
+import DnsRecords from '~/components/dns/DnsRecords.astro';
+
+Every DNS query and reply has the same shape on the wire: a 12-byte header full of flags, then up to four sections (question, answer, authority, additional). For the lookup that sends these messages, start with [how DNS works](/blog/what-is-dns/).
+
+## The message
+
+This is a real response to `hugosibony.com A`, drawn as its five parts. Click any field to see what it does.
+
+<DnsMessage />
+
+The flags carry the message's whole personality: `QR` (question or answer), `RD` and `RA` (was recursion asked for, is it offered), `AA` (authoritative), `RCODE` (`NOERROR`, `NXDOMAIN`, `SERVFAIL`), and the DNSSEC bits `AD` and `CD`.
+
+## The records
+
+The answer section is a list of **resource records**. `A` gets the headlines, but a domain holds a handful of record types, each with a job: mail routing, aliases, delegation, text for verification, DNSSEC keys.
+
+<DnsRecords />
+
+## Authenticity: DNSSEC
+
+Nothing above proves an answer is genuine. A resolver on the path could forge one, and a plain lookup would never notice. **DNSSEC** fixes that with signatures. Each zone signs its records with a private key and publishes the signature as an **RRSIG** and the public key as a **DNSKEY**. The parent zone vouches for that key with a **DS** record, so trust chains from the root down to the name. A validating resolver checks the chain and sets the **AD** bit in the header when it holds.
+
+DNSSEC proves an answer is authentic; it does not hide it. Confidentiality is a separate job, done by [encryption](/blog/dns-encryption/).
+
+## References
+
+- [RFC 1035 §4.1](https://www.rfc-editor.org/rfc/rfc1035#section-4.1): message format, header, question, and resource-record layout.
+- [RFC 4035](https://www.rfc-editor.org/rfc/rfc4035) and [RFC 6840](https://www.rfc-editor.org/rfc/rfc6840): the `AD` and `CD` DNSSEC header bits.
+- [RFC 6891](https://www.rfc-editor.org/rfc/rfc6891): EDNS(0) and the OPT pseudo-record.
+- [RFC 4033](https://www.rfc-editor.org/rfc/rfc4033) and [RFC 4035](https://www.rfc-editor.org/rfc/rfc4035): DNSSEC, the chain of trust, and validation.
+- [IANA DNS parameters](https://www.iana.org/assignments/dns-parameters/dns-parameters.xhtml): the record-type and header-flag registries.
+- Defining RFCs for the types shown: [3596](https://www.rfc-editor.org/rfc/rfc3596) (AAAA), [2782](https://www.rfc-editor.org/rfc/rfc2782) (SRV), [8659](https://www.rfc-editor.org/rfc/rfc8659) (CAA), [9460](https://www.rfc-editor.org/rfc/rfc9460) (HTTPS/SVCB), [4034](https://www.rfc-editor.org/rfc/rfc4034) (DS, DNSKEY, RRSIG).
+
+## DNS series
+
+1. [How DNS works](/blog/what-is-dns/)
+2. **Inside a DNS packet** (this post)
+3. [Encrypting DNS](/blog/dns-encryption/)
+4. [How malware abuses DNS](/blog/dns-malware/)
+
+Practical companion: [Which resolver to choose](/blog/public-dns-resolvers/).
