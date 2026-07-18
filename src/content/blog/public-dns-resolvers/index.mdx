@@ -9,6 +9,7 @@ tags: ["dns", "privacy", "networking"]
 
 import WhatIspSees from '~/components/dns/WhatIspSees.astro';
 import ResolverTable from '~/components/dns/ResolverTable.astro';
+import ResolverChooser from '~/components/dns/ResolverChooser.astro';
 import DigitSwitch from '~/components/dns/DigitSwitch.astro';
 import { Callout } from '~/components/mdx';
 
@@ -34,10 +35,7 @@ Cloudflare copied the pattern: `1.1.1.2` and `1.1.1.3` are `1.1.1.1` with blockl
 
 ## Which one
 
-- **Fast and unfiltered** → `1.1.1.1`
-- **Free malware blocking, non-profit** → `9.9.9.9`
-- **Block ads on every device at once** → `94.140.14.14` on the router
-- **Analyzing malware, or debugging "site won't load"** → `9.9.9.10`
+<ResolverChooser />
 
 ## Set it
 

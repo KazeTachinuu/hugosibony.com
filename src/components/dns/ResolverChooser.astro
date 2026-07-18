@@ -1,0 +1,193 @@
+---
+/**
+ * Pick a resolver by what you want from it, then copy the IP. Same data as the
+ * comparison table, turned into a one-tap decision.
+ * Addresses verified against each provider's own docs (Cloudflare, Quad9,
+ * AdGuard, Google) and kept in sync with ResolverTable.astro.
+ */
+import { Icon } from 'astro-icon/components';
+
+const OPTIONS = [
+  { label: 'Just fast', icon: 'lucide:zap', who: 'Cloudflare', ip: '1.1.1.1', alt: '1.0.0.1',
+    why: 'No filtering, fastest almost everywhere.', note: '' },
+  { label: 'Block malware', icon: 'lucide:shield', who: 'Quad9', ip: '9.9.9.9', alt: '149.112.112.112',
+    why: 'Refuses domains on its threat blocklist. Swiss non-profit, no logging.', note: '' },
+  { label: 'Block ads', icon: 'lucide:ban', who: 'AdGuard', ip: '94.140.14.14', alt: '94.140.15.15',
+    why: 'Blocks ads and trackers as well as malware.', note: 'Best set on the router, so it covers every device.' },
+  { label: 'No filter / debug', icon: 'lucide:bug', who: 'Quad9 unfiltered', ip: '9.9.9.10', alt: '149.112.112.10',
+    why: 'Blocklist off, for malware analysis or chasing a false positive.', note: '' },
+  { label: 'Familiar', icon: 'lucide:globe', who: 'Google', ip: '8.8.8.8', alt: '8.8.4.4',
+    why: 'No filtering, everywhere. Google-grade logging.', note: '' },
+];
+---
+
+<figure class="rc" aria-label="Pick a DNS resolver" data-opts={JSON.stringify(OPTIONS)}>
+  <p class="rc-q">What do you want from it?</p>
+
+  <div class="rc-opts" role="tablist" aria-label="Priority">
+    {OPTIONS.map((o, i) => (
+      <button type="button" role="tab" class="rc-opt" data-i={i} aria-selected={String(i === 0)}>
+        <Icon name={o.icon} size={16} class="rc-opt-icon" />
+        <span>{o.label}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="rc-card">
+    <div class="rc-head">
+      <span class="rc-who" data-who></span>
+      <span class="rc-why" data-why></span>
+    </div>
+
+    <div class="rc-ips">
+      <button type="button" class="rc-ip" data-copy>
+        <span class="rc-ip-val" data-ip></span>
+        <span class="rc-ip-copy">
+          <Icon name="lucide:copy" size={14} class="rc-ico-copy" />
+          <Icon name="lucide:check" size={14} class="rc-ico-check" />
+        </span>
+      </button>
+      <button type="button" class="rc-ip rc-ip-alt" data-copy>
+        <span class="rc-ip-tag">backup</span>
+        <span class="rc-ip-val" data-alt></span>
+        <span class="rc-ip-copy">
+          <Icon name="lucide:copy" size={13} class="rc-ico-copy" />
+          <Icon name="lucide:check" size={13} class="rc-ico-check" />
+        </span>
+      </button>
+    </div>
+
+    <p class="rc-note" data-note hidden></p>
+  </div>
+</figure>
+
+<style>
+  .rc {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.5rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+  .rc-q {
+    font: 600 0.62rem var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+
+  .rc-opts { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.25rem; }
+  .rc-opt {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--page-bg);
+    color: var(--text-secondary);
+    font: 500 0.85rem var(--font-sans);
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), background 0.2s var(--ease-smooth);
+  }
+  .rc-opt:hover { border-color: var(--color-gray-400); color: var(--page-text); }
+  .rc-opt-icon { color: var(--muted); flex-shrink: 0; }
+  .rc-opt[aria-selected='true'] { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .rc-opt[aria-selected='true'] .rc-opt-icon { color: #fff; }
+
+  .rc-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--page-bg);
+    padding: 1.2rem 1.3rem;
+  }
+  .rc-head { margin-bottom: 1rem; }
+  .rc-who { display: block; font: 600 1.05rem var(--font-sans); color: var(--page-text); letter-spacing: -0.01em; }
+  .rc-why { display: block; font-size: 0.9rem; line-height: 1.5; color: var(--text-secondary); margin-top: 0.2rem; }
+
+  .rc-ips { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .rc-ip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--code-bg, var(--subtle-bg));
+    cursor: copy;
+    transition: border-color 0.15s var(--ease-smooth);
+  }
+  .rc-ip:hover { border-color: var(--accent); }
+  .rc-ip-val { font: 600 1.05rem var(--font-mono); color: var(--accent); }
+  .rc-ip-alt { background: transparent; }
+  .rc-ip-alt .rc-ip-val { font-size: 0.9rem; color: var(--text-secondary); }
+  .rc-ip-tag {
+    font: 600 0.58rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rc-ip-copy { display: inline-flex; color: var(--muted); flex-shrink: 0; }
+  .rc-ico-check { display: none; color: var(--accent); }
+  .rc-ip.copied .rc-ico-copy { display: none; }
+  .rc-ip.copied .rc-ico-check { display: inline-flex; }
+  .rc-ip.copied { border-color: var(--accent); }
+
+  .rc-note {
+    margin: 0.9rem 0 0;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .rc-note[hidden] { display: none; }
+
+  @media (max-width: 560px) {
+    .rc { padding: 1.1rem 1rem 1.2rem; }
+    .rc-opt { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+    .rc-ips { flex-direction: column; align-items: stretch; }
+    .rc-ip { justify-content: space-between; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rc-opt, .rc-ip { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.rc').forEach((root) => {
+    const opts = JSON.parse(root.dataset.opts!);
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.rc-opt')];
+    const who = root.querySelector<HTMLElement>('[data-who]')!;
+    const why = root.querySelector<HTMLElement>('[data-why]')!;
+    const ip = root.querySelector<HTMLElement>('[data-ip]')!;
+    const alt = root.querySelector<HTMLElement>('[data-alt]')!;
+    const note = root.querySelector<HTMLElement>('[data-note]')!;
+
+    function select(i: number) {
+      const o = opts[i];
+      tabs.forEach((t, n) => t.setAttribute('aria-selected', String(n === i)));
+      who.textContent = o.who;
+      why.textContent = o.why;
+      ip.textContent = o.ip;
+      alt.textContent = o.alt;
+      if (o.note) { note.textContent = o.note; note.hidden = false; } else { note.hidden = true; }
+    }
+
+    tabs.forEach((t, i) => t.addEventListener('click', () => select(i)));
+
+    root.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        const val = btn.querySelector<HTMLElement>('.rc-ip-val')?.textContent?.trim();
+        if (!val) return;
+        await navigator.clipboard.writeText(val);
+        btn.classList.add('copied');
+        setTimeout(() => btn.classList.remove('copied'), 1200);
+      }),
+    );
+
+    select(0);
+  });
+</script>
