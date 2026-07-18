@@ -1,6 +1,7 @@
 ---
 import Layout from '~/layouts/Layout.astro';
 import PageHeader from '~/components/PageHeader.astro';
+import { Icon } from 'astro-icon/components';
 import { getCollection } from 'astro:content';
 
 const tools = (await getCollection('tools', (e) => import.meta.env.DEV || !e.data.draft)).sort(
@@ -21,7 +22,7 @@ const tools = (await getCollection('tools', (e) => import.meta.env.DEV || !e.dat
             <span class="row-year">{external ? 'ext' : 'tool'}</span>
             <span class="row-title">{t.data.title}</span>
             <span class="row-meta">{t.data.description}</span>
-            <span class="row-arrow">{external ? '↗' : '→'}</span>
+            <Icon name={external ? 'lucide:arrow-up-right' : 'lucide:arrow-right'} class="row-arrow" size={14} />
           </a>
         </li>
       );

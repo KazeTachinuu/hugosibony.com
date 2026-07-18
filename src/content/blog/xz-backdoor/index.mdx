@@ -2,7 +2,7 @@
 title: "The XZ backdoor (CVE-2024-3094)"
 description: "A two-year supply-chain operation hid a remote-code-execution backdoor in OpenSSH via the xz compression library. A half-second slowdown on ssh logins caught it days before it would have shipped to every Linux server."
 date: 2026-04-25
-updated: 2026-07-13
+updated: 2026-07-18
 draft: false
 categories: ["security"]
 tags: ["xz", "cve-2024-3094", "supply-chain", "reverse-engineering"]
@@ -112,7 +112,7 @@ What almost shipped was pre-authentication remote code execution in <Term slug="
   </div>
 </aside>
 
-## Act I - Arrival
+## Act I: Arrival
 
 Jia Tan's first xz commit landed in October 2021. Through 2022, sock-puppet accounts pressured maintainer Lasse Collin about review speed and release cadence. By November 2022, Jia Tan was listed as co-maintainer. By January 2023, he was signing releases.
 
@@ -127,7 +127,7 @@ The quiet takeover then moved outside ordinary code review. Four changes mattere
         <h4>oss-fuzz contact switched</h4>
       </header>
       <p class="xz-sabotage-effect">Lasse's contact is replaced with Jia Tan's. Fuzzing reports now route to the attacker.</p>
-      <a class="xz-sabotage-src" href="https://github.com/google/oss-fuzz/pull/9960" target="_blank" rel="noopener noreferrer">oss-fuzz PR #9960 ↗</a>
+      <a class="xz-sabotage-src" href="https://github.com/google/oss-fuzz/pull/9960" target="_blank" rel="noopener noreferrer">oss-fuzz PR #9960</a>
     </article>
 
     <article class="xz-sabotage-card">
@@ -136,7 +136,7 @@ The quiet takeover then moved outside ordinary code review. Four changes mattere
         <h4>IFUNC fuzzing disabled</h4>
       </header>
       <p class="xz-sabotage-effect">Fuzzing of xz's <Term slug="ifunc">IFUNC</Term> paths is disabled: the same mechanism the backdoor later abuses.</p>
-      <a class="xz-sabotage-src" href="https://github.com/google/oss-fuzz/pull/10667" target="_blank" rel="noopener noreferrer">oss-fuzz PR #10667 ↗</a>
+      <a class="xz-sabotage-src" href="https://github.com/google/oss-fuzz/pull/10667" target="_blank" rel="noopener noreferrer">oss-fuzz PR #10667</a>
     </article>
 
     <article class="xz-sabotage-card">
@@ -145,7 +145,7 @@ The quiet takeover then moved outside ordinary code review. Four changes mattere
         <h4>Landlock sandbox check broken</h4>
       </header>
       <p class="xz-sabotage-effect">A stray <code>.</code> breaks the compile probe. <code>HAVE_LINUX_LANDLOCK</code> is never defined, silently disabling the sandbox in xz 5.6.1.</p>
-      <a class="xz-sabotage-src" href="https://github.com/tukaani-project/xz/commit/328c52da8a2bbb81307644efdb58db2c422d9ba7" target="_blank" rel="noopener noreferrer">commit 328c52da ↗</a>
+      <a class="xz-sabotage-src" href="https://github.com/tukaani-project/xz/commit/328c52da8a2bbb81307644efdb58db2c422d9ba7" target="_blank" rel="noopener noreferrer">commit 328c52da</a>
     </article>
 
     <article class="xz-sabotage-card">
@@ -154,7 +154,7 @@ The quiet takeover then moved outside ordinary code review. Four changes mattere
         <h4>SECURITY.md rewritten</h4>
       </header>
       <p class="xz-sabotage-effect">Security reports move from public GitHub advisories to private email, where Jia Tan sees them first.</p>
-      <a class="xz-sabotage-src" href="https://github.com/tukaani-project/xz/commit/af071ef7702debef4f1d324616a0137a5001c14c" target="_blank" rel="noopener noreferrer">commit af071ef7 ↗</a>
+      <a class="xz-sabotage-src" href="https://github.com/tukaani-project/xz/commit/af071ef7702debef4f1d324616a0137a5001c14c" target="_blank" rel="noopener noreferrer">commit af071ef7</a>
     </article>
 
   </div>
@@ -164,7 +164,7 @@ Russ Cox's [xz-timeline](https://research.swtch.com/xz-timeline) has the dated p
 
 <Timeline client:visible />
 
-## Act II - The Trigger
+## Act II: The Trigger
 
 By February 2024, Jia Tan signs releases and controls the security inbox. The hostile code lands next: not in git, but in the release tarball.
 
@@ -242,15 +242,15 @@ After autoconf evaluates the macro, the m4 variables resolve into concrete shell
 
 This is the central trick: the trigger lives only in the tarball. It exploits the gap between the repository people review and the generated artifact distributions actually build.
 
-## Act III - The Payload
+## Act III: The Payload
 
 The dropper is built to be boring at every layer: harmless-looking pieces, no obvious <Term slug="elf">ELF</Term> payload on disk, and silent exits outside distro builds. The m4 trigger plus two compressed test fixtures unfold into one object file: `liblzma_la-crc64-fast.o`.
 
-### Stage 1 - the shell script that comes out
+### Stage 1: the shell script that comes out
 
 The m4-flow above produces a 1.3 KB shell script - Stage-1. It doesn't do anything dangerous itself; its only job is to extract the next layer from the *other* test fixture, `good-large_compressed.lzma`.
 
-### Stage 2 - the chunker
+### Stage 2: the chunker
 
 Stage-1 runs this pipeline:
 
@@ -306,7 +306,7 @@ The `<head-chunker>` repeatedly skips 1024 bytes and takes selected chunks from 
 
 The 5.6.0 dropper uses different magic numbers (`tail -c +31265`, `head -c +724`, a different `tr` table) - same shape, version-specific constants.
 
-### Stage 3 - the gates
+### Stage 3: the gates
 
 Before that second pass extracts the ELF, Stage-2 gates aggressively. Each check below is "if this looks wrong, exit silently - no error, no message, no trace":
 
@@ -334,7 +334,7 @@ The important symbols, per [smx-smx/xzre](https://github.com/smx-smx/xzre), are:
 
 Once linked into `liblzma.so.5`, the object becomes part of a signed, hash-verified Debian or Fedora package. The package checks pass, because they verify the binary as built, and the binary as built contains the backdoor.
 
-## Act IV - The Hijack
+## Act IV: The Hijack
 
 The runtime attack needs two conditions: `liblzma` loaded inside `sshd`, and a writable function pointer before startup hardening finishes.
 
@@ -389,7 +389,7 @@ A loaded library shares its host process. Once `liblzma.so.5` is mapped into `ss
 
 An <Term slug="ifunc">IFUNC</Term> symbol is resolved by running a small resolver during process startup. xz already used this for CRC64, choosing between a fast CPU-specific implementation and a fallback. The backdoor hides inside that existing dispatch path; it does not add a suspicious new mechanism.
 
-The timing is the bug-shaped gap: IFUNC resolvers run before <Term slug="relro">RELRO</Term> makes the GOT read-only. During that window, a resolver can rewrite GOT entries. Full RELRO still arrives, just too late.
+The timing is the bug-shaped gap: IFUNC resolvers run before <Term slug="relro">RELRO</Term> makes the GOT read-only. During that window, a resolver can rewrite GOT entries. Full RELRO still arrives, but too late.
 
 <figure class="xz-startup not-prose" role="img" aria-label="sshd startup timeline showing the writable-GOT window between IFUNC resolver execution and RELRO, with events on the left track and GOT state on the right track">
   <p class="xz-startup-eyebrow">sshd startup · the IFUNC window</p>
@@ -460,7 +460,7 @@ The timing is the bug-shaped gap: IFUNC resolvers run before <Term slug="relro">
   </div>
 </figure>
 
-### The resolver - installing the hook
+### The resolver: installing the hook
 
 The installer is split across two lookalike functions:
 
@@ -499,7 +499,7 @@ After linking, the call jumps to **`_get_cpuia`**, a deliberate typo sitting nex
 
 The important point is the data path, not the basic blocks: walk <Term slug="r-debug">`_r_debug`</Term>, find `sshd`'s <Term slug="link-map">`link_map`</Term>, parse its <Term slug="dynsym">`.dynsym`</Term>, locate <Term slug="rsa-public-decrypt">`RSA_public_decrypt`</Term>, and overwrite that GOT slot. By the time `_get_cpuid` returns to glibc, the pointer is already poisoned; RELRO then freezes it.
 
-### The hook - at request time
+### The hook: at request time
 
 The runtime payload avoids obvious strings: names such as `RSA_public_decrypt` are resolved indirectly during the `link_map` walk. A simple string scan of the object is therefore unhelpful.
 
@@ -570,7 +570,7 @@ At request time, the hook waits for certificate authentication. OpenSSH thinks i
 
 The signature scheme is <Term slug="ed448">Ed448</Term>, not Ed25519 - EdDSA over Curve448, ~224-bit classical security. [amlweems/xzbot](https://github.com/amlweems/xzbot) confirmed it with a working proof-of-concept, extracted the embedded public key, and shipped a honeypot patch for OpenSSH. Without the matching private key, even a connection that knows the modulus layout produces no system call. The gate kept blast radius to whoever held that key - and stopped opportunistic abuse the moment the binary shipped.
 
-## Act V - The Discovery
+## Act V: The Discovery
 
 What caught the backdoor was a half-second of CPU on every ssh login. A clean `sshd -h` took `0m0.299s`; the same call against a backdoored `liblzma` took `0m0.807s`.
 
@@ -582,7 +582,7 @@ The tools Andres Freund named in his disclosure:
 
 The trail led into liblzma's CRC64 path - a function sshd has no upstream reason to call - and into the redirected `RSA_public_decrypt`. He posted the disclosure to *oss-security*:
 
-> After observing a few odd symptoms around liblzma (part of the xz package) on Debian sid installations over the last weeks (logins with ssh taking a lot of CPU, valgrind errors) I figured out the answer: The upstream xz repository and the xz tarballs have been backdoored. - Andres Freund, [oss-security 2024/03/29/4 ↗](https://www.openwall.com/lists/oss-security/2024/03/29/4)
+> After observing a few odd symptoms around liblzma (part of the xz package) on Debian sid installations over the last weeks (logins with ssh taking a lot of CPU, valgrind errors) I figured out the answer: The upstream xz repository and the xz tarballs have been backdoored. - Andres Freund, [oss-security 2024/03/29/4](https://www.openwall.com/lists/oss-security/2024/03/29/4)
 
 <LatencyChart />
 
@@ -614,11 +614,11 @@ The vulnerable releases reached rolling and pre-release distributions only. Stab
   </article>
 </div>
 
-## Attribution - who was Jia Tan?
+## Attribution: who was Jia Tan?
 
 What Jia Tan *did* is on the record. Who Jia Tan *was* - real name, real geography, employer - is not public and may never be. The most rigorous open analysis to date is Rhea Karty (Dartmouth) and Simon Henniger (TU Munich), [published April 2024](https://rheaeve.substack.com/p/xz-backdoor-times-damned-times-and).
 
-### Timezone - claimed vs actual
+### Timezone: claimed vs actual
 
 Almost every Jia Tan commit is timestamped **UTC+8** - Chinese Standard Time. A handful are stamped **UTC+2** or **UTC+3** - Eastern European Time and its summer variant. Forgetting to set a fake timezone before commit is a one-way error: someone really in UTC+8 will not accidentally produce UTC+3 timestamps. Someone in EET who forgot to fake the timezone will.
 

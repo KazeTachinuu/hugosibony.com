@@ -1,13 +1,13 @@
 ---
-title: "WiFi IONIS setup"
-description: "Connect to the IONIS network on Linux and Android"
+title: "Connect to the IONIS (eduroam) WiFi on Linux, Android, and iOS"
+description: "Set up EPITA's IONIS network (eduroam) with PEAP/MSCHAPv2 and no CA certificate: GUI, nmcli, iwd, and netctl."
 date: 2025-09-08T11:14:36-04:00
-updated: 2026-07-13
+updated: 2026-07-18
 categories: ["notes"]
 tags: ["wifi", "epita", "enterprise-wifi", "linux", "android", "networking"]
 ---
 
-IONIS is EPITA's campus WiFi, and it is just eduroam under another name: the same settings and credentials work on any `eduroam` SSID at any participating university. Login is your EPITA email plus your IONIS (Microsoft) password, no CA certificate. It only broadcasts on 5 GHz: if the SSID does not show up, blame your WiFi card, not your config. Official doc: [docs.forge.epita.fr](https://docs.forge.epita.fr/epita/environment/from-school/wifi).
+IONIS is EPITA's campus WiFi, and it is eduroam under another name: the same settings and credentials work on any `eduroam` SSID at any participating university. Login is your EPITA email plus your IONIS (Microsoft) password, no CA certificate. It only broadcasts on 5 GHz: if the SSID does not show up, blame your WiFi card, not your config. Official doc: [docs.forge.epita.fr](https://docs.forge.epita.fr/epita/environment/from-school/wifi).
 
 ## Pixel / Android (GrapheneOS)
 
@@ -50,7 +50,7 @@ Default on Ubuntu, Fedora, and GNOME in general. Click IONIS and the dialog shou
 
 ## Linux: NetworkManager (CLI)
 
-No GUI? Use nmcli (nmtui has no EAP fields, it cannot set up enterprise networks). The whole connection in one command:
+Without a GUI, use nmcli. nmtui has no EAP fields, so it can't set up enterprise networks. The whole connection in one command:
 
 ```bash
 nmcli connection add type wifi con-name IONIS ifname wlan0 ssid IONIS \

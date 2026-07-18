@@ -1,5 +1,6 @@
 ---
 import Layout from '~/layouts/Layout.astro';
+import { Icon } from 'astro-icon/components';
 import { SITE } from '~/lib/site';
 import { getCollection } from 'astro:content';
 
@@ -66,7 +67,7 @@ const featured = FEATURED.map((f) => {
               {p.data.description && (
                 <p class="article-preview-desc">{p.data.description}</p>
               )}
-              <a href={href} class="article-preview-cta">Read more →</a>
+              <a href={href} class="article-preview-cta">Read more <Icon name="lucide:arrow-right" size={15} /></a>
             </li>
           );
         })}
@@ -90,7 +91,7 @@ const featured = FEATURED.map((f) => {
               return (
                 <li data-popular-slug={slug}>
                   <a href={href}>
-                    <span class="popular-arrow">→</span>
+                    <Icon name="lucide:arrow-right" class="popular-arrow" size={14} />
                     <span>{p.data.title}</span>
                   </a>
                 </li>

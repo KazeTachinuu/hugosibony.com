@@ -12,6 +12,7 @@
     <button type="button" role="tab" aria-selected="false" data-mode="doh">Encrypted <span class="dns-isp-port">DoH</span></button>
   </div>
 
+  <div class="dns-isp-scroll">
   <div class="dns-isp-diagram">
     <div class="dns-isp-node">
       <span class="dns-isp-icon">
@@ -76,6 +77,7 @@
       <span class="dns-isp-note">answers</span>
     </div>
   </div>
+  </div>
 
   <div class="dns-isp-legend">
     <span class="dns-isp-legend-item"><span class="dns-isp-arrow" aria-hidden="true"></span> query</span>
@@ -124,6 +126,15 @@
     font-size: 0.75rem;
   }
 
+  /* Keep the horizontal diagram from crushing its lanes on phones: it scrolls
+     as one piece below its natural minimum rather than overlapping the chips. */
+  .dns-isp-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    margin-inline: -0.25rem;
+    padding-inline: 0.25rem;
+  }
   /* Diagram: node / lane / node / lane / node */
   .dns-isp-diagram {
     display: grid;
@@ -300,10 +311,10 @@
 
   @media (max-width: 560px) {
     .dns-isp { padding: 1.1rem 1rem; }
-    .dns-isp-diagram { gap: 0.4rem; }
+    .dns-isp-diagram { gap: 0.4rem; min-width: 23rem; }
     .dns-isp-icon { width: 2.5rem; height: 2.5rem; }
     .dns-isp-icon svg { width: 1.25rem; height: 1.25rem; }
-    .dns-isp-chip { font-size: 0.56rem; padding: 0.1rem 0.25rem; }
+    .dns-isp-chip { font-size: 0.62rem; padding: 0.1rem 0.3rem; }
     .dns-isp-lane { gap: 1.4rem; }
   }
 </style>

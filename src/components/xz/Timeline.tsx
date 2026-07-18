@@ -192,7 +192,7 @@ export default function Timeline() {
                         rel="noopener noreferrer"
                         class="xz-tl-event-source"
                       >
-                        source <span class="xz-tl-event-source-arrow">↗</span>
+                        source <svg class="xz-tl-event-source-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></svg>
                       </a>
                     </article>
                   );

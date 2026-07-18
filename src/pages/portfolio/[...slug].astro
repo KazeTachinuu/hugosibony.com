@@ -4,6 +4,7 @@ import type { GetStaticPaths } from 'astro';
 import Layout from '~/layouts/Layout.astro';
 import Breadcrumb from '~/components/Breadcrumb.astro';
 import ArticleHeader from '~/components/ArticleHeader.astro';
+import { Icon } from 'astro-icon/components';
 import ArticleFooter from '~/components/ArticleFooter.astro';
 import * as MDX from '~/components/mdx';
 
@@ -32,7 +33,7 @@ const { Content } = await render(post);
   >
     {post.data.github?.[0] && (
       <a href={post.data.github[0]} target="_blank" rel="noopener" class="inline-flex items-center gap-2 mt-3 text-sm font-medium text-accent">
-        View on GitHub →
+        View on GitHub <Icon name="lucide:arrow-up-right" size={15} />
       </a>
     )}
   </ArticleHeader>
