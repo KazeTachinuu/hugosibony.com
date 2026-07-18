@@ -1,0 +1,42 @@
+---
+title: "Encrypting DNS: DoH, DoT, and DoQ"
+description: "Plain DNS is cleartext on port 53. How DoT, DoH, and DoQ encrypt it, how DoH rides HTTPS, and exactly what your ISP can still see. Part 3 of a DNS series."
+date: 2026-07-17T11:00:00Z
+updated: 2026-07-18
+categories: ["notes"]
+tags: ["dns", "networking", "privacy"]
+---
+
+import DohEncryption from '~/components/dns/DohEncryption.astro';
+import { Callout } from '~/components/mdx';
+
+Classic DNS (Do53) is cleartext on port 53: your ISP reads, and can rewrite, every name you look up. Three encrypted transports fix that, to different degrees. For the lookup this protects, start with [how DNS works](/blog/what-is-dns/).
+
+Switch between them to see what still leaks:
+
+<DohEncryption />
+
+<Callout type="note" title="How DoH encrypts">
+No new crypto. The query is the same DNS bytes, sent as an HTTP POST (`application/dns-message`) inside a normal **TLS** connection on port 443. The answer comes back in the response body. Ordinary DNS, over HTTPS.
+</Callout>
+
+The catch in every encrypted mode: the observer still sees the resolver's IP, and the TLS **SNI** can reveal which resolver you picked unless Encrypted Client Hello (ECH) hides it. Your individual queries stay private either way.
+
+To turn encryption on and prove it works, see [which resolver to choose](/blog/public-dns-resolvers/).
+
+## References
+
+- [RFC 7858](https://www.rfc-editor.org/rfc/rfc7858): DNS over TLS (DoT), TCP 853.
+- [RFC 8484](https://www.rfc-editor.org/rfc/rfc8484): DNS over HTTPS (DoH), `application/dns-message` over TCP 443.
+- [RFC 9250](https://www.rfc-editor.org/rfc/rfc9250): DNS over QUIC (DoQ), UDP 853.
+- [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035): classic DNS (Do53) over UDP/TCP 53.
+- [RFC 9460](https://www.rfc-editor.org/rfc/rfc9460): the HTTPS record and its Encrypted Client Hello (ECH) hint.
+
+## DNS series
+
+1. [How DNS works](/blog/what-is-dns/)
+2. [Inside a DNS packet](/blog/dns-packet/)
+3. **Encrypting DNS** (this post)
+4. [How malware abuses DNS](/blog/dns-malware/)
+
+Practical companion: [Which resolver to choose](/blog/public-dns-resolvers/).

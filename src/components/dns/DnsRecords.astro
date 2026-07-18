@@ -1,0 +1,466 @@
+---
+/**
+ * An interactive tour of the DNS resource-record types you actually meet.
+ * Click a chip to see its numeric TYPE code, the RFC that defines it, a
+ * one-line plain-English purpose, and a realistic example record line.
+ *
+ * Types, TYPE codes and defining RFCs are verified against the IANA DNS
+ * Parameters registry (Resource Record (RR) TYPEs). A is selected by default.
+ */
+import { Icon } from 'astro-icon/components';
+
+type Rec = {
+  type: string;
+  code: number;
+  rfc: string;
+  purpose: string;
+  example: string;
+};
+
+type Group = {
+  id: string;
+  label: string;
+  icon: string;
+  records: Rec[];
+};
+
+const GROUPS: Group[] = [
+  {
+    id: 'everyday',
+    label: 'Everyday',
+    icon: 'lucide:compass',
+    records: [
+      {
+        type: 'A',
+        code: 1,
+        rfc: 'RFC 1035',
+        purpose: 'Maps a name to an IPv4 address.',
+        example: 'hugosibony.com.   300   IN   A   104.21.86.12',
+      },
+      {
+        type: 'AAAA',
+        code: 28,
+        rfc: 'RFC 3596',
+        purpose: 'Maps a name to an IPv6 address.',
+        example: 'hugosibony.com.   300   IN   AAAA   2606:4700:3030::6815:560c',
+      },
+      {
+        type: 'CNAME',
+        code: 5,
+        rfc: 'RFC 1035',
+        purpose: 'Canonical-name alias, points a name at another name.',
+        example: 'www.github.com.   3600   IN   CNAME   github.com.',
+      },
+    ],
+  },
+  {
+    id: 'mailtext',
+    label: 'Mail & text',
+    icon: 'lucide:mail',
+    records: [
+      {
+        type: 'MX',
+        code: 15,
+        rfc: 'RFC 1035',
+        purpose: 'Mail exchanger for the domain, with a priority.',
+        example: 'example.com.   3600   IN   MX   10   mail.example.com.',
+      },
+      {
+        type: 'TXT',
+        code: 16,
+        rfc: 'RFC 1035',
+        purpose: 'Arbitrary text, used for SPF, DKIM and domain verification.',
+        example: 'example.com.   3600   IN   TXT   "v=spf1 include:_spf.example.com ~all"',
+      },
+    ],
+  },
+  {
+    id: 'infra',
+    label: 'Infrastructure',
+    icon: 'lucide:network',
+    records: [
+      {
+        type: 'NS',
+        code: 2,
+        rfc: 'RFC 1035',
+        purpose: 'Delegates a zone to its authoritative nameservers.',
+        example: 'hugosibony.com.   21600   IN   NS   brad.ns.cloudflare.com.',
+      },
+      {
+        type: 'SOA',
+        code: 6,
+        rfc: 'RFC 1035',
+        purpose:
+          "Start of authority, the zone's primary NS, admin email, serial, timers, and the minimum TTL used for negative caching.",
+        example:
+          'hugosibony.com.   1800   IN   SOA   brad.ns.cloudflare.com. dns.cloudflare.com. 2407153759 10000 2400 604800 1800',
+      },
+      {
+        type: 'PTR',
+        code: 12,
+        rfc: 'RFC 1035',
+        purpose: 'Reverse lookup, maps an IP back to a name (in-addr.arpa).',
+        example: '1.2.0.192.in-addr.arpa.   IN   PTR   host.example.com.',
+      },
+      {
+        type: 'SRV',
+        code: 33,
+        rfc: 'RFC 2782',
+        purpose: 'Locates a service, its host and port.',
+        example: '_sip._tcp.example.com.   IN   SRV   10 60 5060 sipserver.example.com.',
+      },
+      {
+        type: 'CAA',
+        code: 257,
+        rfc: 'RFC 8659',
+        purpose: 'Declares which CAs may issue certificates for the domain.',
+        example: 'example.com.   IN   CAA   0 issue "letsencrypt.org"',
+      },
+      {
+        type: 'HTTPS',
+        code: 65,
+        rfc: 'RFC 9460',
+        purpose:
+          'Service binding for HTTPS (ALPN and hints like ECH), lets clients skip a round trip.',
+        example: 'hugosibony.com.   300   IN   HTTPS   1 . alpn="h3,h2" ipv4hint="104.21.86.12,172.67.213.189"',
+      },
+      {
+        type: 'OPT',
+        code: 41,
+        rfc: 'RFC 6891',
+        purpose:
+          'EDNS(0) pseudo-record, not real zone data. Lives in the Additional section, advertises UDP payload size and carries the DO (DNSSEC OK) bit.',
+        example: ';; OPT PSEUDOSECTION:   EDNS: version: 0, flags: do; udp: 1232',
+      },
+    ],
+  },
+  {
+    id: 'dnssec',
+    label: 'DNSSEC',
+    icon: 'lucide:shield-check',
+    records: [
+      {
+        type: 'DS',
+        code: 43,
+        rfc: 'RFC 4034',
+        purpose:
+          "Delegation Signer, a hash of a child zone's DNSKEY, published in the parent to build the DNSSEC chain of trust.",
+        example: 'example.com.   3600   IN   DS   370 13 2 BE74359954660069D5C63D200C39F5603827D7DD02B56F120EE9F3A86764247C',
+      },
+      {
+        type: 'DNSKEY',
+        code: 48,
+        rfc: 'RFC 4034',
+        purpose: "A zone's DNSSEC public key.",
+        example: 'example.com.   3600   IN   DNSKEY   257 3 13 mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+KkxLbxIL...',
+      },
+      {
+        type: 'RRSIG',
+        code: 46,
+        rfc: 'RFC 4034',
+        purpose: 'A DNSSEC signature over an RRset.',
+        example:
+          'example.com.   3600   IN   RRSIG   A 13 2 3600 20240201000000 20240101000000 12345 example.com. J5A6...==',
+      },
+    ],
+  },
+];
+
+const ALL = GROUPS.flatMap((g) => g.records);
+---
+
+<figure class="dnsrec" aria-label="DNS record types explorer" data-count={ALL.length}>
+  <div class="dnsrec-head">
+    <span class="dnsrec-eyebrow">
+      <Icon name="lucide:list-tree" size={15} class="dnsrec-eyebrow-icon" />
+      DNS record types
+    </span>
+    <p class="dnsrec-lede">
+      The building blocks of a zone. Pick a type to see its numeric code, defining RFC, and a real-shaped example.
+    </p>
+  </div>
+
+  {/* Chip groups, click a chip to select its record */}
+  <div class="dnsrec-groups">
+    {GROUPS.map((g) => (
+      <section class="dnsrec-group" aria-label={g.label}>
+        <span class="dnsrec-group-head">
+          <Icon name={g.icon} size={14} class="dnsrec-group-icon" />
+          <span class="dnsrec-group-label">{g.label}</span>
+        </span>
+        <div class="dnsrec-chips" role="tablist" aria-label={`${g.label} record types`}>
+          {g.records.map((r) => (
+            <button
+              type="button"
+              class="dnsrec-chip"
+              role="tab"
+              data-type={r.type}
+              data-on={r.type === 'A' ? '' : undefined}
+              aria-selected={r.type === 'A' ? 'true' : 'false'}
+            >
+              <span class="dnsrec-chip-name">{r.type}</span>
+              <span class="dnsrec-chip-code">{r.code}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  {/* Detail panels, all rendered; JS shows the selected one (A without JS) */}
+  <div class="dnsrec-stage">
+    {ALL.map((r) => (
+      <article
+        class="dnsrec-detail"
+        data-detail={r.type}
+        data-hidden={r.type !== 'A' ? 'true' : undefined}
+      >
+        <header class="dnsrec-detail-head">
+          <h4 class="dnsrec-detail-name">{r.type}</h4>
+          <span class="dnsrec-detail-meta">
+            <span class="dnsrec-badge dnsrec-badge-code">
+              <span class="dnsrec-badge-key">TYPE</span>
+              {r.code}
+            </span>
+            <span class="dnsrec-badge dnsrec-badge-rfc">{r.rfc}</span>
+          </span>
+        </header>
+        <p class="dnsrec-purpose">{r.purpose}</p>
+        <div class="dnsrec-example">
+          <span class="dnsrec-example-label">example</span>
+          <code class="dnsrec-example-code">{r.example}</code>
+        </div>
+      </article>
+    ))}
+  </div>
+</figure>
+
+<style>
+  .dnsrec {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.5rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+
+  /* Head */
+  .dnsrec-head { margin-bottom: 1.2rem; }
+  .dnsrec-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.62rem var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dnsrec-eyebrow-icon { color: var(--accent); }
+  .dnsrec-lede {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0.55rem 0 0;
+    max-width: 46ch;
+  }
+
+  /* Chip groups */
+  .dnsrec-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+  .dnsrec-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+  .dnsrec-group-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dnsrec-group-icon { color: var(--text-secondary); flex-shrink: 0; }
+  .dnsrec-group-label {
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dnsrec-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .dnsrec-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 34px;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--page-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition:
+      border-color var(--duration-fast, 0.15s) var(--ease-smooth),
+      color var(--duration-fast, 0.15s) var(--ease-smooth),
+      background var(--duration-fast, 0.15s) var(--ease-smooth);
+  }
+  .dnsrec-chip:hover { border-color: var(--accent); color: var(--page-text); }
+  .dnsrec-chip-name { font: 600 0.8rem var(--font-mono); }
+  .dnsrec-chip-code {
+    font: 600 0.62rem var(--font-mono);
+    padding: 0.05rem 0.32rem;
+    border-radius: 5px;
+    background: var(--subtle-bg);
+    color: var(--muted);
+  }
+  .dnsrec-chip[data-on] {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, var(--page-bg));
+    color: var(--page-text);
+  }
+  .dnsrec-chip[data-on] .dnsrec-chip-name { color: var(--accent); }
+  .dnsrec-chip[data-on] .dnsrec-chip-code {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+  }
+
+  /* Detail stage */
+  .dnsrec-stage { position: relative; }
+  .dnsrec-detail {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--page-bg);
+    padding: 1.1rem 1.2rem 1.2rem;
+    animation: dnsrec-in 0.3s var(--ease-smooth) both;
+  }
+  .dnsrec-detail[data-hidden] { display: none; }
+  @keyframes dnsrec-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .dnsrec-detail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+  }
+  .dnsrec-detail-name {
+    font: 700 1.25rem var(--font-mono);
+    color: var(--page-text);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .dnsrec-detail-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .dnsrec-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font: 600 0.65rem var(--font-mono);
+    letter-spacing: 0.03em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .dnsrec-badge-key {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .dnsrec-badge-code {
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+  .dnsrec-badge-rfc {
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .dnsrec-purpose {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0 0 1rem;
+  }
+
+  /* Example record line */
+  .dnsrec-example {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 9px;
+    background: var(--code-bg, var(--subtle-bg));
+    border: 1px solid var(--border);
+  }
+  .dnsrec-example-label {
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .dnsrec-example-code {
+    font: 0.78rem var(--font-mono);
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.55;
+    min-width: 0;
+  }
+
+  @media (max-width: 560px) {
+    .dnsrec { padding: 1.1rem 1rem 1.2rem; }
+    .dnsrec-detail-head { align-items: flex-start; }
+    .dnsrec-detail-name { font-size: 1.1rem; }
+    .dnsrec-example-code { font-size: 0.72rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dnsrec-detail { animation: none; }
+    .dnsrec-chip { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.dnsrec').forEach((root) => {
+    const chips = [...root.querySelectorAll<HTMLElement>('.dnsrec-chip')];
+    const details = [...root.querySelectorAll<HTMLElement>('.dnsrec-detail')];
+
+    function select(type: string) {
+      chips.forEach((c) => {
+        const on = c.getAttribute('data-type') === type;
+        if (on) c.setAttribute('data-on', '');
+        else c.removeAttribute('data-on');
+        c.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      details.forEach((d) => {
+        const on = d.getAttribute('data-detail') === type;
+        if (on) d.removeAttribute('data-hidden');
+        else d.setAttribute('data-hidden', 'true');
+      });
+    }
+
+    chips.forEach((c) =>
+      c.addEventListener('click', () => {
+        const type = c.getAttribute('data-type');
+        if (type) select(type);
+      }),
+    );
+
+    select('A');
+  });
+</script>

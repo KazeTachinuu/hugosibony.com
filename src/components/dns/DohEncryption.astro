@@ -1,0 +1,273 @@
+---
+/**
+ * How DNS gets encrypted: Do53 vs DoT vs DoH vs DoQ.
+ * Shows the transport, the port, the encapsulation layers, and exactly what
+ * an on-path observer (your ISP) can still see in each mode.
+ *
+ * Verified: Do53 UDP/TCP 53 (RFC 1035), DoT TCP 853 (RFC 7858),
+ * DoH TCP 443 (RFC 8484, application/dns-message), DoQ UDP 853 (RFC 9250).
+ */
+import { Icon } from 'astro-icon/components';
+
+type Layer = { label: string; note: string; enc: boolean };
+type Transport = {
+  id: string;
+  name: string;
+  full: string;
+  port: string;
+  rfc: string;
+  encrypted: boolean;
+  wire: string;
+  sees: string;
+  block: string;
+  layers: Layer[];
+};
+
+const TRANSPORTS: Transport[] = [
+  {
+    id: 'do53', name: 'Do53', full: 'Classic DNS', port: 'UDP / TCP · 53', rfc: 'RFC 1035', encrypted: false,
+    wire: 'Q: hugosibony.com A    ·    A: 104.21.86.12',
+    sees: 'Everything. The exact name you asked for and the IP you got back, in cleartext. Your ISP can log it, sell it, or rewrite the answer.',
+    block: 'Trivial to read and to tamper with.',
+    layers: [
+      { label: 'DNS message', note: 'question + answer, plaintext', enc: false },
+      { label: 'UDP :53', note: 'no encryption layer at all', enc: false },
+    ],
+  },
+  {
+    id: 'dot', name: 'DoT', full: 'DNS over TLS', port: 'TCP · 853', rfc: 'RFC 7858', encrypted: true,
+    wire: 'encrypted TLS record',
+    sees: 'That you sent DNS to this resolver, and nothing about the names. Port 853 is a dead giveaway that it is DNS, so it can be blocked wholesale.',
+    block: 'Names hidden; the fact that it is DNS is obvious (dedicated port).',
+    layers: [
+      { label: 'DNS message', note: 'the query bytes', enc: true },
+      { label: 'TLS', note: 'encrypts everything above', enc: true },
+      { label: 'TCP :853', note: 'dedicated DNS-over-TLS port', enc: false },
+    ],
+  },
+  {
+    id: 'doq', name: 'DoQ', full: 'DNS over QUIC', port: 'UDP · 853', rfc: 'RFC 9250', encrypted: true,
+    wire: 'encrypted QUIC packet',
+    sees: 'Same as DoT: which resolver you chose, and that it is DNS (the UDP/853 signature). Query names stay hidden. Lower latency than DoT.',
+    block: 'Names hidden; UDP/853 is still a recognisable DNS signature.',
+    layers: [
+      { label: 'DNS message', note: 'the query bytes', enc: true },
+      { label: 'QUIC (TLS 1.3)', note: 'encrypts everything above', enc: true },
+      { label: 'UDP :853', note: 'QUIC transport, not TCP', enc: false },
+    ],
+  },
+  {
+    id: 'doh', name: 'DoH', full: 'DNS over HTTPS', port: 'TCP · 443', rfc: 'RFC 8484', encrypted: true,
+    wire: 'encrypted HTTPS request',
+    sees: 'Only that you opened an HTTPS connection to this IP, indistinguishable from loading any website. Hardest to block or profile.',
+    block: 'Names hidden and blended into normal web traffic on :443.',
+    layers: [
+      { label: 'DNS message', note: 'POST /dns-query · application/dns-message', enc: true },
+      { label: 'HTTP/2', note: 'wraps the message as an HTTPS request', enc: true },
+      { label: 'TLS', note: 'encrypts everything above', enc: true },
+      { label: 'TCP :443', note: 'same port as all HTTPS', enc: false },
+    ],
+  },
+];
+---
+
+<figure class="doh" aria-label="How DNS is encrypted: Do53, DoT, DoH, DoQ">
+  <div class="doh-tabs" role="tablist" aria-label="DNS transport">
+    {TRANSPORTS.map((t, i) => (
+      <button type="button" role="tab" class="doh-tab" data-i={i} aria-selected={String(i === 0)}>
+        <span class="doh-tab-name">{t.name}</span>
+        <span class="doh-tab-full">{t.full}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="doh-wire-head">
+    <span class="doh-endpoint"><Icon name="lucide:laptop" size={16} /> you</span>
+    <span class="doh-line">
+      <span class="doh-eye" title="your ISP, on the path"><Icon name="lucide:eye" size={15} /></span>
+    </span>
+    <span class="doh-endpoint"><Icon name="lucide:server" size={16} /> resolver</span>
+  </div>
+
+  {TRANSPORTS.map((t, i) => (
+    <div class="doh-panel" data-i={i} data-hidden={i !== 0 ? 'true' : undefined}>
+      <div class="doh-packet" data-encrypted={String(t.encrypted)}>
+        <span class="doh-packet-lock"><Icon name="lucide:lock" size={14} /></span>
+        <code class="doh-packet-text">{t.wire}</code>
+      </div>
+      <p class="doh-port"><span class="doh-port-label">port</span> <code class="doh-port-val">{t.port}</code> <span class="doh-rfc">{t.rfc}</span></p>
+
+      <p class="doh-sub">Encapsulation</p>
+      <ul class="doh-layers">
+        {t.layers.map((l) => (
+          <li class="doh-layer" data-enc={String(l.enc)}>
+            <span class="doh-layer-lock"><Icon name="lucide:lock" size={14} /></span>
+            <span class="doh-layer-label">{l.label}</span>
+            <span class="doh-layer-note">{l.note}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="doh-lockline"><Icon name="lucide:lock" size={13} /> <span>= encrypted, unreadable on the wire</span></p>
+
+      <p class="doh-sub">What your ISP still sees</p>
+      <p class="doh-sees">{t.sees}</p>
+    </div>
+  ))}
+
+  <p class="doh-foot">
+    <Icon name="lucide:info" size={14} />
+    <span>In every encrypted mode the observer still learns the <em>resolver's IP</em>, and the TLS <strong>SNI</strong> can leak which resolver you picked, unless <strong>Encrypted Client Hello (ECH)</strong> hides it. Your individual queries stay private either way.</span>
+  </p>
+</figure>
+
+<style>
+  .doh {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.4rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+
+  .doh-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+  .doh-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.55rem 0.4rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--page-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), background 0.2s var(--ease-smooth);
+  }
+  .doh-tab:hover { border-color: var(--color-gray-400); }
+  .doh-tab[aria-selected='true'] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--page-bg));
+  }
+  .doh-tab-name { font: 700 0.9rem var(--font-mono); color: var(--page-text); }
+  .doh-tab[aria-selected='true'] .doh-tab-name { color: var(--accent); }
+  .doh-tab-full { font: 0.62rem var(--font-sans); color: var(--muted); text-align: center; line-height: 1.1; }
+
+  .doh-panel { display: flex; flex-direction: column; gap: 1.1rem; }
+  .doh-panel[data-hidden] { display: none; }
+
+  /* Wire */
+  .doh-wire-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+  }
+  .doh-endpoint { display: inline-flex; align-items: center; gap: 0.35rem; font: 600 0.78rem var(--font-sans); color: var(--page-text); }
+  .doh-line { position: relative; height: 2px; background: var(--border); border-radius: 2px; }
+  .doh-eye {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 50%;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .doh-packet {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--code-bg, var(--subtle-bg));
+  }
+  .doh-packet[data-encrypted='true'] { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+  .doh-packet[data-encrypted='true'] .doh-packet-text { color: var(--muted); letter-spacing: 0.06em; }
+  .doh-packet[data-encrypted='false'] .doh-packet-lock { display: none; }
+  .doh-packet-lock { color: var(--accent); flex-shrink: 0; display: inline-flex; }
+  .doh-packet-text { font: 0.8rem var(--font-mono); color: var(--text-secondary); word-break: break-word; }
+  .doh-port { margin: 0.55rem 0 0; font-size: 0.8rem; color: var(--muted); }
+  .doh-port-label { font: 600 0.6rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; margin-right: 0.35rem; }
+  .doh-port-val { font-family: var(--font-mono); color: var(--text-secondary); }
+  .doh-rfc { font: 0.72rem var(--font-mono); color: var(--muted); margin-left: 0.5rem; }
+
+  /* Layers */
+  .doh-sub {
+    font: 600 0.62rem var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+  .doh-layers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .doh-layer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--page-bg);
+  }
+  .doh-layer[data-enc='true'] {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    background: color-mix(in srgb, var(--accent) 6%, var(--page-bg));
+  }
+  .doh-layer-lock { flex-shrink: 0; color: var(--accent); display: inline-flex; }
+  .doh-layer[data-enc='false'] .doh-layer-lock { visibility: hidden; }
+  .doh-layer-label { font: 600 0.82rem var(--font-mono); color: var(--page-text); }
+  .doh-layer-note { font-size: 0.76rem; color: var(--muted); margin-left: auto; text-align: right; }
+  .doh-lockline { display: flex; align-items: center; gap: 0.35rem; margin: 0.55rem 0 0; font-size: 0.72rem; color: var(--muted); }
+  .doh-lockline :global(svg) { color: var(--accent); }
+
+  .doh-sees { margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--text-secondary); }
+
+  .doh-foot {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .doh-foot :global(svg) { flex-shrink: 0; margin-top: 0.15rem; }
+
+  @media (max-width: 560px) {
+    .doh { padding: 1.1rem 1rem 1.2rem; }
+    .doh-tabs { grid-template-columns: repeat(4, 1fr); gap: 0.3rem; }
+    .doh-tab { padding: 0.5rem 0.2rem; }
+    .doh-tab-full { display: none; }
+    .doh-layer-note { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .doh-tab { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.doh').forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.doh-tab')];
+    const panels = [...root.querySelectorAll<HTMLElement>('.doh-panel')];
+    tabs.forEach((tab, i) =>
+      tab.addEventListener('click', () => {
+        tabs.forEach((t, n) => t.setAttribute('aria-selected', String(n === i)));
+        panels.forEach((p, n) => (n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true')));
+      }),
+    );
+  });
+</script>

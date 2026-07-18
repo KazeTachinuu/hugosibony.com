@@ -19,6 +19,15 @@ const GOODIES = [
   { name: 'Skyjo Tracker', href: 'https://skyjo-track.vercel.app/', icon: 'lucide:external-link', external: true },
 ];
 
+// Direct links, shown as their own group inside the mobile menu so search/RSS
+// stay reachable on phones (they're hidden from the top bar below `sm`).
+const MORE = [
+  { name: 'Bookmarks', href: '/bookmarks/', icon: 'lucide:bookmark' },
+  { name: 'whoami', href: '/about/', icon: 'lucide:terminal' },
+  { name: 'Search', href: '/search/', icon: 'lucide:search' },
+  { name: 'RSS feed', href: '/rss.xml', icon: 'lucide:rss' },
+];
+
 function isActive(href: string) {
   return pathname === href || (href !== '/' && pathname.startsWith(href));
 }
@@ -28,7 +37,7 @@ function isActive(href: string) {
   <nav class="header-inner">
     <a href="/" class="brand-logo">
       <span class="brand-name">hugo</span>
-      <span class="brand-spark" aria-hidden="true">✦</span>
+      <Icon name="lucide:sparkle" class="brand-spark" size={12} aria-hidden="true" />
       <span class="brand-name">sibony</span>
     </a>
 
@@ -104,59 +113,68 @@ function isActive(href: string) {
       <a href="/rss.xml" class="icon-btn hidden sm:inline-flex" aria-label="RSS feed">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
       </a>
-      <button type="button" data-mobile-toggle aria-label="Toggle menu" class="icon-btn sm:hidden">
-        <svg data-menu-icon="open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg>
-        <svg data-menu-icon="close" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="hidden"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      <button type="button" data-menu-open aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false" class="icon-btn sm:hidden">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
     </div>
   </nav>
 
-  {/* Mobile nav drawer */}
-  <div data-mobile-nav class="mobile-nav hidden sm:hidden">
-    <div class="px-6 py-4 flex flex-col gap-1">
-      <p class="label mt-2 mb-1 px-3">Categories</p>
-      {CATEGORIES.map(({ name, href }) => (
-        <a href={href} class:list={['mobile-nav-link', isActive(href) && 'mobile-nav-link-active']}>
-          {name}
-        </a>
-      ))}
-      <p class="label mt-4 mb-1 px-3">Goodies</p>
-      {GOODIES.map((item) => (
-        <a href={item.href} class:list={['mobile-nav-link', isActive(item.href) && 'mobile-nav-link-active']} target={item.external ? '_blank' : undefined} rel={item.external ? 'noopener' : undefined}>
-          {item.name}{item.external ? ' ↗' : ''}
-        </a>
-      ))}
-      <a href="/bookmarks/" class:list={['mobile-nav-link mt-2 border-t border-theme pt-3', isActive('/bookmarks/') && 'mobile-nav-link-active']}>
-        Bookmarks
+  {/* Mobile menu — native <dialog> drawer (backdrop, focus trap, Esc close for free) */}
+  <dialog id="mobile-menu" class="mobile-menu" aria-label="Site menu">
+    <div class="mobile-menu-head">
+      <a href="/" class="brand-logo">
+        <span class="brand-name">hugo</span>
+        <Icon name="lucide:sparkle" class="brand-spark" size={12} aria-hidden="true" />
+        <span class="brand-name">sibony</span>
       </a>
-      <a href="/about/" class:list={['mobile-nav-link', isActive('/about/') && 'mobile-nav-link-active']}>
-        whoami
-      </a>
-      <a href="/search/" class="mobile-nav-link mt-2 border-t border-theme pt-3">
-        Search
-      </a>
+      <button type="button" data-menu-close aria-label="Close menu" class="icon-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-  </div>
+    <nav class="mobile-menu-nav">
+      <p class="mobile-menu-label">Categories</p>
+      {CATEGORIES.map(({ name, href, icon }) => (
+        <a href={href} class:list={['mobile-menu-item', isActive(href) && 'is-active']}>
+          <Icon name={icon} class="mobile-menu-icon" size={18} />
+          <span>{name}</span>
+        </a>
+      ))}
+      <p class="mobile-menu-label">Goodies</p>
+      {GOODIES.map((item) => (
+        <a href={item.href} class:list={['mobile-menu-item', isActive(item.href) && 'is-active']} target={item.external ? '_blank' : undefined} rel={item.external ? 'noopener' : undefined}>
+          <Icon name={item.icon} class="mobile-menu-icon" size={18} />
+          <span>{item.name}</span>
+          {item.external && <Icon name="lucide:arrow-up-right" class="mobile-menu-ext" size={15} />}
+        </a>
+      ))}
+      <p class="mobile-menu-label">More</p>
+      {MORE.map(({ name, href, icon }) => (
+        <a href={href} class:list={['mobile-menu-item', isActive(href) && 'is-active']}>
+          <Icon name={icon} class="mobile-menu-icon" size={18} />
+          <span>{name}</span>
+        </a>
+      ))}
+    </nav>
+  </dialog>
 </header>
 
 <script>
-  const toggle = document.querySelector('[data-mobile-toggle]');
-  const mobileNav = document.querySelector('[data-mobile-nav]');
-  const openIcon = document.querySelector('[data-menu-icon="open"]');
-  const closeIcon = document.querySelector('[data-menu-icon="close"]');
+  // Mobile menu — native <dialog>. showModal() gives Esc + focus trap + inert
+  // background; :has() in CSS locks page scroll. We only wire open/close.
+  const menu = document.querySelector<HTMLDialogElement>('#mobile-menu');
+  const openBtn = document.querySelector('[data-menu-open]');
 
-  function closeNav() {
-    mobileNav?.classList.add('hidden');
-    openIcon?.classList.remove('hidden');
-    closeIcon?.classList.add('hidden');
-  }
-
-  toggle?.addEventListener('click', () => {
-    const open = mobileNav?.classList.toggle('hidden');
-    openIcon?.classList.toggle('hidden', !open);
-    closeIcon?.classList.toggle('hidden', open ?? true);
+  openBtn?.addEventListener('click', () => {
+    menu?.showModal();
+    openBtn.setAttribute('aria-expanded', 'true');
   });
-  mobileNav?.querySelectorAll('a').forEach((a) => a.addEventListener('click', closeNav));
+  menu?.addEventListener('close', () => openBtn?.setAttribute('aria-expanded', 'false'));
+  menu?.querySelector('[data-menu-close]')?.addEventListener('click', () => menu.close());
+  // Close on navigation and on backdrop click.
+  menu?.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.close()));
+  menu?.addEventListener('click', (e) => {
+    if (e.target === menu) menu.close();
+  });
 
   // Dropdown menus
   const dropdowns = document.querySelectorAll<HTMLElement>('[data-dropdown]');
@@ -176,10 +194,8 @@ function isActive(href: string) {
   });
 
   document.addEventListener('click', closeAllDropdowns);
+  // <dialog> already closes itself on Escape; we only need it for the dropdowns.
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeAllDropdowns();
-      if (!mobileNav?.classList.contains('hidden')) closeNav();
-    }
+    if (e.key === 'Escape') closeAllDropdowns();
   });
 </script>

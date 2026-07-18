@@ -399,7 +399,7 @@ export default function GlossaryLookup() {
               <a href={selected.moreHref} target="_blank" rel="noopener noreferrer">
                 {selected.moreLabel ?? 'Primary source'}
               </a>
-              <span class="gloss-more-arrow" aria-hidden>↗</span>
+              <svg class="gloss-more-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></svg>
             </p>
           )}
         </article>

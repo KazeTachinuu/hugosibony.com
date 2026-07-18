@@ -17,6 +17,7 @@
  * MDX still compiles cleanly during edits.
  */
 import { getEntry } from '../data/glossary';
+import { Icon } from 'astro-icon/components';
 
 interface Props { slug: string; href?: string; }
 const { slug, href: hrefOverride } = Astro.props;
@@ -39,7 +40,7 @@ const external = !!hrefOverride && /^https?:\/\//.test(hrefOverride);
       </span>
       <span class="term-pop-summary">{entry.summary}</span>
       <span class="term-pop-cta">
-        <span class="term-pop-cta-arrow" aria-hidden="true">↗</span>
+        <Icon name="lucide:arrow-up-right" class="term-pop-cta-arrow" size={13} aria-hidden="true" />
         click for the full reference
       </span>
     </span>

@@ -7,6 +7,7 @@
  * Usage:  <Mnemonic op="callq">callq</Mnemonic>
  */
 import { OPS, type Op } from '../../data/asm-ops';
+import { Icon } from 'astro-icon/components';
 
 interface Props {
   op: string;
@@ -48,7 +49,7 @@ const href = `/tools/asm-lookup/?op=${slug}`;
       </span>
       <span class="xz-mn-pop-summary">{resolved.summary}</span>
       <span class="xz-mn-pop-cta">
-        <span class="xz-mn-pop-cta-arrow" aria-hidden>↗</span>
+        <Icon name="lucide:arrow-up-right" class="xz-mn-pop-cta-arrow" size={13} aria-hidden />
         click to open the full reference
       </span>
     </span>

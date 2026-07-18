@@ -1,5 +1,6 @@
 ---
 /** Clean report diagram for `_get_cpuia`: what gets found, what gets changed. */
+import { Icon } from 'astro-icon/components';
 ---
 
 <figure
@@ -15,13 +16,13 @@
       <strong>Find <code>sshd</code></strong>
       <p>Walk the dynamic linker's loaded-object list.</p>
     </div>
-    <div class="xz-install-arrow" aria-hidden="true">→</div>
+    <div class="xz-install-arrow" aria-hidden="true"><Icon name="lucide:arrow-right" size={18} /></div>
     <div class="xz-install-step">
       <span>02</span>
       <strong>Find GOT slot</strong>
       <p>Resolve <code>RSA_public_decrypt</code> in <code>sshd</code>.</p>
     </div>
-    <div class="xz-install-arrow is-hot" aria-hidden="true">→</div>
+    <div class="xz-install-arrow is-hot" aria-hidden="true"><Icon name="lucide:arrow-right" size={18} /></div>
     <div class="xz-install-step is-hot">
       <span>03</span>
       <strong>Rewrite pointer</strong>

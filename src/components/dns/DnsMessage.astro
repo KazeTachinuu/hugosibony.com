@@ -1,0 +1,741 @@
+---
+/**
+ * Anatomy of a DNS message, the wire format, made clickable.
+ *
+ * Renders a real response to `hugosibony.com A` as its five sections
+ * (Header, Question, Answer, Authority, Additional). The 12-byte header is
+ * drawn as six 16-bit words; the second word is split into its eleven control
+ * sub-fields. Every field is a button, clicking it explains the field's name,
+ * bit width and plain-English meaning in the panel below.
+ *
+ * Wire format verified against RFC 1035 §4.1.1 (header) / §4.1.2-3 (question,
+ * RR). The flags word is QR(1) Opcode(4) AA(1) TC(1) RD(1) RA(1) Z(1) AD(1)
+ * CD(1) RCODE(4): Z, AD and CD are three distinct 1-bit fields, with AD/CD
+ * being DNSSEC bits (RFC 4035 / 6840). EDNS(0) OPT note per RFC 6891.
+ *
+ * Example word 2 = 0x8180 (QR=1, RD=1, RA=1, AD=0, RCODE=NOERROR). AD=0 because
+ * hugosibony.com is not DNSSEC-signed. Its real A response has two records
+ * (Cloudflare anycast: 104.21.86.12, 172.67.213.189), so ANCOUNT=2. Verified live.
+ */
+import { Icon } from 'astro-icon/components';
+
+type Field = {
+  label: string;
+  bits: string;   // display width, e.g. "16-bit", "1-bit", "variable"
+  w?: number;     // numeric weight, only used to size flag sub-cells
+  value: string;  // wire value in the running example
+  meaning: string;
+};
+
+const FIELDS: Record<string, Field> = {
+  // ── Header: six 16-bit words ──────────────────────────────────────────
+  id: {
+    label: 'ID',
+    bits: '16-bit',
+    value: '0x1a2b',
+    meaning:
+      'A 16-bit identifier chosen by the client. The server copies it verbatim into the response so the resolver can match this reply to the exact query it sent, the first line of defence against spoofed answers.',
+  },
+  flags: {
+    label: 'Flags',
+    bits: '16-bit',
+    value: '0x8180',
+    meaning:
+      'The second word packs eleven control fields into 16 bits: one QR bit, a 4-bit Opcode, six single-bit flags (AA, TC, RD, RA, Z, AD, CD) and a 4-bit RCODE. Click any sub-field below to see it on its own.',
+  },
+  qdcount: {
+    label: 'QDCOUNT',
+    bits: '16-bit',
+    value: '1',
+    meaning: 'Number of entries in the Question section. Nearly always 1, a DNS message asks about one name at a time.',
+  },
+  ancount: {
+    label: 'ANCOUNT',
+    bits: '16-bit',
+    value: '2',
+    meaning: 'Number of resource records in the Answer section. Here 2: hugosibony.com returns two A records (Cloudflare anycast).',
+  },
+  nscount: {
+    label: 'NSCOUNT',
+    bits: '16-bit',
+    value: '0',
+    meaning: 'Number of resource records in the Authority section. 0 here, this is a direct answer, not a referral, so no NS records are attached.',
+  },
+  arcount: {
+    label: 'ARCOUNT',
+    bits: '16-bit',
+    value: '1',
+    meaning: 'Number of resource records in the Additional section. 1 here, the EDNS(0) OPT pseudo-record described below.',
+  },
+
+  // ── Flags sub-fields (in wire order, MSB first) ───────────────────────
+  qr: {
+    label: 'QR',
+    bits: '1-bit',
+    w: 1,
+    value: '1',
+    meaning: 'Query (0) or Response (1). This message is a response, so QR=1.',
+  },
+  opcode: {
+    label: 'Opcode',
+    bits: '4-bit',
+    w: 4,
+    value: '0',
+    meaning: 'The kind of query. 0 = QUERY, the standard lookup. Other opcodes include IQUERY (1, obsolete), STATUS (2), NOTIFY (4) and UPDATE (5). Copied from query to response.',
+  },
+  aa: {
+    label: 'AA',
+    bits: '1-bit',
+    w: 1,
+    value: '0',
+    meaning: 'Authoritative Answer. Set when the responding server owns the zone. This reply comes from a recursive resolver serving cached data, so AA=0.',
+  },
+  tc: {
+    label: 'TC',
+    bits: '1-bit',
+    w: 1,
+    value: '0',
+    meaning: 'TrunCation. Set when the message was cut short because it exceeded the transport size limit, signalling the client to retry the query over TCP.',
+  },
+  rd: {
+    label: 'RD',
+    bits: '1-bit',
+    w: 1,
+    value: '1',
+    meaning: 'Recursion Desired. Set by the client to ask the server to resolve the name fully on its behalf. Copied into the response.',
+  },
+  ra: {
+    label: 'RA',
+    bits: '1-bit',
+    w: 1,
+    value: '1',
+    meaning: 'Recursion Available. Set by the server to advertise that it is willing to perform recursion for clients.',
+  },
+  z: {
+    label: 'Z',
+    bits: '1-bit',
+    w: 1,
+    value: '0',
+    meaning: 'Reserved for future use. Must be zero in every query and response (RFC 1035). It is a single bit, the AD and CD bits beside it were later carved out of this reserved space.',
+  },
+  ad: {
+    label: 'AD',
+    bits: '1-bit',
+    w: 1,
+    value: '0',
+    meaning: 'Authentic Data, a DNSSEC bit (RFC 4035 / 6840). A validating resolver sets it when the answer was cryptographically verified against the DNSSEC chain of trust. Here AD=0: hugosibony.com is not DNSSEC-signed, so there is nothing to validate.',
+  },
+  cd: {
+    label: 'CD',
+    bits: '1-bit',
+    w: 1,
+    value: '0',
+    meaning: 'Checking Disabled, a DNSSEC bit (RFC 4035). Set by the client to tell the resolver to skip DNSSEC validation and return data even if it would fail to validate.',
+  },
+  rcode: {
+    label: 'RCODE',
+    bits: '4-bit',
+    w: 4,
+    value: '0',
+    meaning: 'Response Code. 0 = NOERROR, 1 = FORMERR, 2 = SERVFAIL, 3 = NXDOMAIN (name does not exist), 5 = REFUSED. Here NOERROR, the lookup succeeded.',
+  },
+
+  // ── Question section ──────────────────────────────────────────────────
+  qname: {
+    label: 'QNAME',
+    bits: 'variable',
+    value: 'hugosibony.com.',
+    meaning: 'The domain name being asked about, encoded as a sequence of length-prefixed labels ("11hugosibony3com") terminated by a single zero byte for the root label. Not null-terminated text.',
+  },
+  qtype: {
+    label: 'QTYPE',
+    bits: '16-bit',
+    value: 'A (1)',
+    meaning: 'The record type requested, here A (1), an IPv4 address. Other common types: AAAA (28) for IPv6, NS (2), MX (15), CNAME (5), TXT (16).',
+  },
+  qclass: {
+    label: 'QCLASS',
+    bits: '16-bit',
+    value: 'IN (1)',
+    meaning: 'The class of the query. Almost always IN (1), the Internet class. CH (Chaos) and HS (Hesiod) exist but are historical.',
+  },
+
+  // ── Answer resource record (generic RR layout) ────────────────────────
+  rrname: {
+    label: 'NAME',
+    bits: 'variable',
+    value: 'hugosibony.com.',
+    meaning: 'The owner name this record belongs to. In responses it is usually a two-byte compression pointer back to the QNAME already present in the message, saving bytes.',
+  },
+  rrtype: {
+    label: 'TYPE',
+    bits: '16-bit',
+    value: 'A (1)',
+    meaning: 'The record type of this answer, A (1), an IPv4 address. It tells the reader how to interpret the RDATA bytes that follow.',
+  },
+  rrclass: {
+    label: 'CLASS',
+    bits: '16-bit',
+    value: 'IN (1)',
+    meaning: 'The class of the record, normally IN (1). For the EDNS OPT record this field is repurposed to carry the sender’s UDP payload size instead.',
+  },
+  rrttl: {
+    label: 'TTL',
+    bits: '32-bit',
+    value: '300',
+    meaning: 'Time-to-live in seconds: how long the record may be cached before it must be re-fetched. A 32-bit unsigned integer, note it is 32-bit, not 16-bit. Here 300s = 5 minutes.',
+  },
+  rrrdlength: {
+    label: 'RDLENGTH',
+    bits: '16-bit',
+    value: '4',
+    meaning: 'The length, in bytes, of the RDATA that follows. For an A record it is exactly 4, the four octets of an IPv4 address.',
+  },
+  rrrdata: {
+    label: 'RDATA',
+    bits: 'variable',
+    value: '104.21.86.12',
+    meaning: 'The record payload, formatted according to TYPE. For an A record it is four raw bytes, 104.21.86.12, not the dotted-decimal text; that is just how we display it.',
+  },
+
+  // ── Additional section: EDNS(0) OPT pseudo-record ─────────────────────
+  opt: {
+    label: 'OPT',
+    bits: 'TYPE 41',
+    value: 'EDNS(0)',
+    meaning: 'The EDNS(0) OPT pseudo-record (RFC 6891). It is not real data: its CLASS field advertises the sender’s maximum UDP payload size, and its TTL field carries extended flags including DO (DNSSEC OK). Its presence is why ARCOUNT = 1 here.',
+  },
+};
+
+const DEFAULT_ID = 'flags';
+const FLAG_SUBS = ['qr', 'opcode', 'aa', 'tc', 'rd', 'ra', 'z', 'ad', 'cd', 'rcode'];
+const COUNT_WORDS = [
+  { id: 'qdcount', offset: '4' },
+  { id: 'ancount', offset: '6' },
+  { id: 'nscount', offset: '8' },
+  { id: 'arcount', offset: '10' },
+];
+const QUESTION = ['qname', 'qtype', 'qclass'];
+const ANSWER = ['rrname', 'rrtype', 'rrclass', 'rrttl', 'rrrdlength', 'rrrdata'];
+
+const def = FIELDS[DEFAULT_ID];
+---
+
+<figure class="dnsm" aria-label="Anatomy of a DNS message: a response to hugosibony.com">
+  <div class="dnsm-head">
+    <span class="dnsm-kicker">DNS message</span>
+    <div class="dnsm-summary">
+      <span class="dnsm-summary-tag">response</span>
+      <code class="dnsm-summary-code">hugosibony.com  A</code>
+      <Icon name="lucide:arrow-right" size={14} class="dnsm-summary-arrow" />
+      <code class="dnsm-summary-code is-answer">104.21.86.12</code>
+    </div>
+    <p class="dnsm-hint">
+      <Icon name="lucide:mouse-pointer-click" size={13} />
+      Click any field to inspect it.
+    </p>
+  </div>
+
+  {/* ── Section 1: Header, 12 bytes, six 16-bit words ─────────────── */}
+  <section class="dnsm-section">
+    <header class="dnsm-sec-head">
+      <Icon name="lucide:hash" size={14} class="dnsm-sec-icon" />
+      <span class="dnsm-sec-name">Header</span>
+      <span class="dnsm-sec-meta">12 bytes · 6 × 16-bit words</span>
+    </header>
+
+    <div class="dnsm-header">
+      {/* Word 0, ID */}
+      <div class="dnsm-word">
+        <span class="dnsm-offset" aria-hidden="true">0</span>
+        <button
+          type="button"
+          class="dnsm-field dnsm-word-cell"
+          data-field="id"
+          data-label={FIELDS.id.label}
+          data-bits={FIELDS.id.bits}
+          data-value={FIELDS.id.value}
+          data-meaning={FIELDS.id.meaning}
+          aria-pressed="false"
+        >
+          <span class="dnsm-fname">ID</span>
+          <span class="dnsm-fval">{FIELDS.id.value}</span>
+          <span class="dnsm-fbits">16-bit</span>
+        </button>
+      </div>
+
+      {/* Word 1, the flags word, split into its sub-fields */}
+      <div class="dnsm-word dnsm-word-flags">
+        <span class="dnsm-offset" aria-hidden="true">2</span>
+        <div class="dnsm-flagsword">
+          <button
+            type="button"
+            class="dnsm-field dnsm-flags-label"
+            data-field="flags"
+            data-label={FIELDS.flags.label}
+            data-bits={FIELDS.flags.bits}
+            data-value={FIELDS.flags.value}
+            data-meaning={FIELDS.flags.meaning}
+            aria-pressed="false"
+          >
+            <Icon name="lucide:flag" size={12} />
+            <span class="dnsm-fname">Flags word</span>
+            <span class="dnsm-fval">{FIELDS.flags.value}</span>
+          </button>
+          <div class="dnsm-bits">
+            {FLAG_SUBS.map((fid) => {
+              const f = FIELDS[fid];
+              return (
+                <button
+                  type="button"
+                  class="dnsm-field dnsm-bit"
+                  data-field={fid}
+                  data-label={f.label}
+                  data-bits={f.bits}
+                  data-value={f.value}
+                  data-meaning={f.meaning}
+                  style={`flex: ${f.w} 1 0`}
+                  aria-pressed="false"
+                >
+                  <span class="dnsm-fname">{f.label}</span>
+                  <span class="dnsm-fval">{f.value}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Words 2–5, the four counts */}
+      {COUNT_WORDS.map((w) => {
+        const f = FIELDS[w.id];
+        return (
+          <div class="dnsm-word">
+            <span class="dnsm-offset" aria-hidden="true">{w.offset}</span>
+            <button
+              type="button"
+              class="dnsm-field dnsm-word-cell"
+              data-field={w.id}
+              data-label={f.label}
+              data-bits={f.bits}
+              data-value={f.value}
+              data-meaning={f.meaning}
+              aria-pressed="false"
+            >
+              <span class="dnsm-fname">{f.label}</span>
+              <span class="dnsm-fval">{f.value}</span>
+              <span class="dnsm-fbits">16-bit</span>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+
+  {/* ── Detail panel ──────────────────────────────────────────────── */}
+  <div class="dnsm-detail" aria-live="polite">
+    <div class="dnsm-detail-head">
+      <span class="dnsm-detail-name" data-detail-name>{def.label}</span>
+      <span class="dnsm-detail-bits" data-detail-bits>{def.bits}</span>
+      <span class="dnsm-detail-value" data-detail-value>{def.value}</span>
+    </div>
+    <p class="dnsm-detail-meaning" data-detail-meaning>{def.meaning}</p>
+  </div>
+
+  {/* ── Section 2: Question ───────────────────────────────────────── */}
+  <section class="dnsm-section">
+    <header class="dnsm-sec-head">
+      <Icon name="lucide:search" size={14} class="dnsm-sec-icon" />
+      <span class="dnsm-sec-name">Question</span>
+      <span class="dnsm-sec-meta">QDCOUNT = 1</span>
+    </header>
+    <div class="dnsm-wire">
+      {QUESTION.map((fid) => {
+        const f = FIELDS[fid];
+        return (
+          <button
+            type="button"
+            class="dnsm-field dnsm-chip"
+            data-field={fid}
+            data-label={f.label}
+            data-bits={f.bits}
+            data-value={f.value}
+            data-meaning={f.meaning}
+            aria-pressed="false"
+          >
+            <span class="dnsm-fname">{f.label}</span>
+            <span class="dnsm-fval">{f.value}</span>
+          </button>
+        );
+      })}
+    </div>
+  </section>
+
+  {/* ── Section 3: Answer (a resource record) ─────────────────────── */}
+  <section class="dnsm-section">
+    <header class="dnsm-sec-head">
+      <Icon name="lucide:corner-down-right" size={14} class="dnsm-sec-icon" />
+      <span class="dnsm-sec-name">Answer</span>
+      <span class="dnsm-sec-meta">ANCOUNT = 2 · resource-record layout</span>
+    </header>
+    <div class="dnsm-wire">
+      {ANSWER.map((fid) => {
+        const f = FIELDS[fid];
+        return (
+          <button
+            type="button"
+            class="dnsm-field dnsm-chip"
+            data-field={fid}
+            data-label={f.label}
+            data-bits={f.bits}
+            data-value={f.value}
+            data-meaning={f.meaning}
+            aria-pressed="false"
+          >
+            <span class="dnsm-fname">{f.label}</span>
+            <span class="dnsm-fval">{f.value}</span>
+          </button>
+        );
+      })}
+    </div>
+    <code class="dnsm-rr-line">hugosibony.com.  300  IN  A  104.21.86.12
+hugosibony.com.  300  IN  A  172.67.213.189</code>
+  </section>
+
+  {/* ── Section 4: Authority ──────────────────────────────────────── */}
+  <section class="dnsm-section">
+    <header class="dnsm-sec-head">
+      <Icon name="lucide:shield-check" size={14} class="dnsm-sec-icon" />
+      <span class="dnsm-sec-name">Authority</span>
+      <span class="dnsm-sec-meta">NSCOUNT = 0</span>
+    </header>
+    <p class="dnsm-note">
+      Empty. This is a direct answer, so no NS records are attached. On a
+      referral, this section would list the nameservers to ask next.
+    </p>
+  </section>
+
+  {/* ── Section 5: Additional ─────────────────────────────────────── */}
+  <section class="dnsm-section">
+    <header class="dnsm-sec-head">
+      <Icon name="lucide:plus" size={14} class="dnsm-sec-icon" />
+      <span class="dnsm-sec-name">Additional</span>
+      <span class="dnsm-sec-meta">ARCOUNT = 1</span>
+    </header>
+    <div class="dnsm-wire">
+      <button
+        type="button"
+        class="dnsm-field dnsm-chip"
+        data-field="opt"
+        data-label={FIELDS.opt.label}
+        data-bits={FIELDS.opt.bits}
+        data-value={FIELDS.opt.value}
+        data-meaning={FIELDS.opt.meaning}
+        aria-pressed="false"
+      >
+        <span class="dnsm-fname">OPT</span>
+        <span class="dnsm-fval">EDNS(0)</span>
+      </button>
+    </div>
+    <p class="dnsm-note">
+      The lone additional record is the EDNS(0) OPT pseudo-record (TYPE 41). It
+      advertises the sender&rsquo;s UDP payload size and carries the DO
+      (DNSSEC OK) bit, modern DNS&rsquo;s extension mechanism (RFC 6891).
+    </p>
+  </section>
+</figure>
+
+<style>
+  .dnsm {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.5rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+
+  /* ── Head ──────────────────────────────────────────────────────── */
+  .dnsm-head { margin-bottom: 1.2rem; }
+  .dnsm-kicker {
+    display: block;
+    font: 600 0.62rem var(--font-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+  .dnsm-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+  }
+  .dnsm-summary-tag {
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    padding: 0.15rem 0.45rem;
+    border-radius: 5px;
+  }
+  .dnsm-summary-code { font-size: 0.95rem; color: var(--page-text); }
+  .dnsm-summary-code.is-answer { color: var(--accent); }
+  .dnsm-summary-arrow { color: var(--muted); flex-shrink: 0; }
+  .dnsm-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0.6rem 0 0;
+    font: 0.72rem var(--font-sans);
+    color: var(--muted);
+  }
+
+  /* ── Sections ──────────────────────────────────────────────────── */
+  .dnsm-section {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--page-bg);
+    padding: 0.9rem 1rem 1rem;
+    margin-top: 0.75rem;
+  }
+  .dnsm-sec-head {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.7rem;
+  }
+  .dnsm-sec-icon { color: var(--accent); flex-shrink: 0; }
+  .dnsm-sec-name {
+    font: 600 0.82rem var(--font-sans);
+    color: var(--page-text);
+    letter-spacing: -0.01em;
+  }
+  .dnsm-sec-meta {
+    margin-left: auto;
+    font: 0.6rem var(--font-mono);
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  /* ── Header bit-field table ────────────────────────────────────── */
+  .dnsm-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .dnsm-word {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .dnsm-offset {
+    display: grid;
+    place-items: center;
+    font: 600 0.62rem var(--font-mono);
+    color: var(--muted);
+    background: var(--subtle-bg);
+    border-radius: 6px;
+    min-height: 2.1rem;
+  }
+
+  /* Shared field-button base */
+  .dnsm-field {
+    font-family: var(--font-mono);
+    border: 1px solid var(--border);
+    background: var(--subtle-bg);
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    text-align: left;
+    transition:
+      border-color var(--duration-fast) var(--ease-smooth),
+      background var(--duration-fast) var(--ease-smooth),
+      color var(--duration-fast) var(--ease-smooth);
+  }
+  .dnsm-field:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    color: var(--page-text);
+  }
+  .dnsm-field[aria-pressed='true'] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--page-text);
+  }
+  .dnsm-fname { font-weight: 600; }
+  .dnsm-fval { color: var(--accent); }
+  .dnsm-field[aria-pressed='true'] .dnsm-fval { color: var(--accent); }
+
+  /* Full-width word cells (ID + counts) */
+  .dnsm-word-cell {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+    padding: 0.5rem 0.7rem;
+  }
+  .dnsm-word-cell .dnsm-fname { font-size: 0.78rem; }
+  .dnsm-word-cell .dnsm-fval { font-size: 0.78rem; }
+  .dnsm-fbits {
+    margin-left: auto;
+    font-size: 0.58rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Flags word */
+  .dnsm-word-flags { align-items: stretch; }
+  .dnsm-flagsword {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+  .dnsm-flags-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.7rem;
+  }
+  .dnsm-flags-label .dnsm-fname { font-size: 0.72rem; }
+  .dnsm-flags-label .dnsm-fval { font-size: 0.72rem; margin-left: auto; }
+  .dnsm-bits {
+    display: flex;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+  .dnsm-bit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.35rem 0.15rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .dnsm-bit .dnsm-fname { font-size: 0.62rem; line-height: 1.1; }
+  .dnsm-bit .dnsm-fval { font-size: 0.66rem; line-height: 1.1; }
+
+  /* ── Detail panel ──────────────────────────────────────────────── */
+  .dnsm-detail {
+    margin-top: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+    border-radius: 12px;
+    background: var(--code-bg, var(--subtle-bg));
+    padding: 0.85rem 1rem 0.95rem;
+  }
+  .dnsm-detail-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+  }
+  .dnsm-detail-name {
+    font: 600 0.9rem var(--font-mono);
+    color: var(--page-text);
+  }
+  .dnsm-detail-bits {
+    font: 600 0.58rem var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+  }
+  .dnsm-detail-value {
+    margin-left: auto;
+    font: 0.82rem var(--font-mono);
+    color: var(--accent);
+  }
+  .dnsm-detail-meaning {
+    margin: 0;
+    font: 0.88rem/1.55 var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  /* ── Question / Answer / Additional wire rows ──────────────────── */
+  .dnsm-wire {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .dnsm-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    padding: 0.4rem 0.65rem;
+    min-width: 0;
+  }
+  .dnsm-chip .dnsm-fname { font-size: 0.72rem; }
+  .dnsm-chip .dnsm-fval { font-size: 0.74rem; word-break: break-word; }
+  .dnsm-rr-line {
+    display: block;
+    margin-top: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    font: 0.76rem var(--font-mono);
+    color: var(--accent);
+    background: var(--code-bg, var(--subtle-bg));
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+  .dnsm-note {
+    margin: 0.15rem 0 0;
+    font: 0.82rem/1.55 var(--font-sans);
+    color: var(--text-secondary);
+  }
+
+  /* ── Mobile ────────────────────────────────────────────────────── */
+  @media (max-width: 560px) {
+    .dnsm { padding: 1.1rem 1rem 1.2rem; }
+    .dnsm-sec-meta { font-size: 0.55rem; }
+    .dnsm-word { grid-template-columns: 1.6rem 1fr; gap: 0.35rem; }
+    .dnsm-offset { min-height: 1.9rem; font-size: 0.56rem; }
+    .dnsm-word-cell { padding: 0.45rem 0.55rem; }
+    /* Let the 11 flag bits wrap into a readable grid instead of overflowing */
+    .dnsm-bits { flex-wrap: wrap; gap: 0.3rem; }
+    .dnsm-bit {
+      flex: 1 1 3.1rem !important;
+      padding: 0.4rem 0.25rem;
+    }
+    .dnsm-detail-value { margin-left: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dnsm-field { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.dnsm').forEach((root) => {
+    const fields = [...root.querySelectorAll<HTMLButtonElement>('.dnsm-field')];
+    const nameEl = root.querySelector<HTMLElement>('[data-detail-name]');
+    const bitsEl = root.querySelector<HTMLElement>('[data-detail-bits]');
+    const valueEl = root.querySelector<HTMLElement>('[data-detail-value]');
+    const meaningEl = root.querySelector<HTMLElement>('[data-detail-meaning]');
+
+    function select(btn: HTMLButtonElement) {
+      fields.forEach((f) => f.setAttribute('aria-pressed', String(f === btn)));
+      if (nameEl) nameEl.textContent = btn.dataset.label ?? '';
+      if (bitsEl) bitsEl.textContent = btn.dataset.bits ?? '';
+      if (valueEl) valueEl.textContent = btn.dataset.value ?? '';
+      if (meaningEl) meaningEl.textContent = btn.dataset.meaning ?? '';
+    }
+
+    fields.forEach((f) => f.addEventListener('click', () => select(f)));
+
+    // Default selection: the flags word.
+    const initial =
+      fields.find((f) => f.dataset.field === 'flags') ?? fields[0];
+    if (initial) select(initial);
+  });
+</script>

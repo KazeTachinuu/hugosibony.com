@@ -1,0 +1,291 @@
+---
+/**
+ * How malware abuses DNS, defensive/educational. Mechanisms + real documented
+ * cases + how defenders detect them. No operational tooling.
+ *
+ * Sourced: MITRE ATT&CK (T1071.004, T1568.002, T1568.001, T1048), Cisco Talos
+ * (DNSMessenger), Palo Alto Unit 42 (OilRig), Mandiant (SUNBURST), 360 Netlab
+ * (Godlua). Links live on each panel.
+ */
+import { Icon } from 'astro-icon/components';
+
+type Case = { name: string; what: string; href: string };
+type Tech = {
+  id: string;
+  name: string;
+  icon: string;
+  attack?: { id: string; href: string };
+  how: string;
+  wire?: string;
+  wireNote?: string;
+  cases: Case[];
+  detect: string;
+};
+
+const TECHS: Tech[] = [
+  {
+    id: 'tunnel', name: 'Tunneling', icon: 'lucide:git-branch',
+    attack: { id: 'T1071.004', href: 'https://attack.mitre.org/techniques/T1071/004/' },
+    how: 'The attacker owns a domain and runs its authoritative server. Data is encoded into the subdomain labels going out, and answers ride back in TXT / NULL / CNAME records. The victim only ever talks to its normal resolver, which forwards the queries, so the tunnel slips straight through egress filtering.',
+    wire: 'n0uqbn3xkr2.af9d21.tunnel.example.   IN   TXT?',
+    wireNote: 'base32 payload · label ≤ 63 B, name ≤ 255 B · low throughput, high latency',
+    cases: [
+      { name: 'iodine / dnscat2 / dns2tcp', what: 'public research tools; iodine leans on NULL records, dnscat2 on TXT/CNAME/MX, dns2tcp on TXT', href: 'https://www.bamsoftware.com/software/dnstt/survey.html' },
+    ],
+    detect: 'Long, high-entropy names; many unique subdomains under one parent domain; a burst of TXT / NULL queries from one host.',
+  },
+  {
+    id: 'c2', name: 'C2 channel', icon: 'lucide:radio',
+    attack: { id: 'T1071.004', href: 'https://attack.mitre.org/techniques/T1071/004/' },
+    how: 'Commands and results are carried in DNS fields, often as low-and-slow beacons that blend into ordinary lookups. DNS is rarely blocked on corporate networks, so it is a reliable back channel.',
+    cases: [
+      { name: 'DNSMessenger', what: 'fileless PowerShell RAT with a two-way channel over TXT records (Cisco Talos, 2017)', href: 'https://blog.talosintelligence.com/2017/03/dnsmessenger.html' },
+      { name: 'OilRig / Helminth, BONDUPDATER', what: 'Iranian-nexus trojans using DNS tunneling for C2, TXT-based (Unit 42)', href: 'https://unit42.paloaltonetworks.com/dns-tunneling-in-the-wild-overview-of-oilrigs-dns-tunneling/' },
+      { name: 'SUNBURST', what: 'encoded victim identity into avsvmcloud[.]com subdomains, then handed off via CNAME (Mandiant)', href: 'https://cloud.google.com/blog/topics/threat-intelligence/sunburst-additional-technical-details' },
+    ],
+    detect: 'Regular, low-volume queries to a single domain (beaconing); disproportionate TXT traffic from one endpoint.',
+  },
+  {
+    id: 'dga', name: 'DGA', icon: 'lucide:shuffle',
+    attack: { id: 'T1568.002', href: 'https://attack.mitre.org/techniques/T1568/002/' },
+    how: 'Malware algorithmically generates thousands of candidate domains from a seed plus the current date, then resolves them until it hits the one the operator registered for that day. You cannot pre-block domains you cannot predict, which defeats static blocklists and takedowns.',
+    wire: 'kqkz0rmxvopht.info      NXDOMAIN\ntj3n8wq2ldacs.info      NXDOMAIN\nptvbuk9raewf.info       45.13.x.x   (live C2)',
+    wireNote: 'the client walks its daily list until one answers',
+    cases: [
+      { name: 'Conficker', what: 'UTC-date DGA; variants A/B made ~250 domains/day, variant C escalated to ~50,000/day', href: 'https://www.anomali.com/blog/hacker-tactics-part-1-domain-generation-algorithms' },
+      { name: 'SUNBURST', what: 'DGA-style subdomain scheme encoding the victim, under one fixed parent domain (Mandiant)', href: 'https://cloud.google.com/blog/topics/threat-intelligence/sunburst-additional-technical-details' },
+    ],
+    detect: 'Bursts of NXDOMAIN answers for random-looking names; newly registered domains; ML DGA classifiers over query logs.',
+  },
+  {
+    id: 'exfil', name: 'Exfiltration', icon: 'lucide:upload',
+    attack: { id: 'T1048', href: 'https://attack.mitre.org/techniques/T1048/' },
+    how: 'Stolen data is chunked, encoded, and packed into the query names sent to the attacker\'s authoritative server, which reassembles it from its query logs. Mechanically it is tunneling, but usually outbound-only and aimed at bulk theft.',
+    wire: '4d616c776172655f63617264.exfil.example.   IN   A?',
+    wireNote: 'hex/base32 chunk of the stolen record in each query',
+    cases: [
+      { name: 'FrameworkPOS', what: 'point-of-sale malware that exfiltrated stolen credit-card data over DNS (MITRE T1048)', href: 'https://attack.mitre.org/techniques/T1048/' },
+    ],
+    detect: 'High volume of unique, long subdomains to one domain; query names that carry data-shaped entropy.',
+  },
+  {
+    id: 'flux', name: 'Fast flux', icon: 'lucide:refresh-cw',
+    attack: { id: 'T1568.001', href: 'https://attack.mitre.org/techniques/T1568/001/' },
+    how: 'One domain is mapped to a large, churning pool of compromised proxy hosts by rotating its records with very short TTLs. Single flux cycles the A records; double flux also cycles the NS records, hiding the true origin behind a second layer.',
+    wire: 'bad.example.   30   IN   A   91.x.x.1\nbad.example.   30   IN   A   203.x.x.7\n(same name, new IPs every few minutes)',
+    wireNote: 'TTL ~30–300 s so blocklists never catch up',
+    cases: [
+      { name: 'Fast Flux DNS', what: 'used broadly by botnets and phishing kits to keep C2 resilient against IP blocking (MITRE T1568.001)', href: 'https://attack.mitre.org/techniques/T1568/001/' },
+    ],
+    detect: 'A single name resolving to many IPs with very low TTLs; rapidly changing A / NS answers.',
+  },
+  {
+    id: 'doh', name: 'DoH abuse', icon: 'lucide:lock',
+    how: 'The same encryption that protects you also hides malware. By doing DNS over HTTPS to a public resolver, an implant conceals both its queries and the fact that DNS is happening from monitors that only watch UDP/53.',
+    cases: [
+      { name: 'Godlua', what: 'widely cited as the first malware to use DoH, pulled C2 addresses via TXT records over DoH (360 Netlab, 2019)', href: 'https://blog.netlab.360.com/an-analysis-of-godlua-backdoor-en/' },
+    ],
+    detect: 'Endpoints reaching public DoH resolvers instead of the enterprise one; force all DNS through an inspected internal resolver.',
+  },
+];
+---
+
+<figure class="dnsx" aria-label="How malware abuses DNS">
+  <div class="dnsx-tabs" role="tablist" aria-label="DNS abuse techniques">
+    {TECHS.map((t, i) => (
+      <button type="button" role="tab" class="dnsx-tab" data-i={i} aria-selected={String(i === 0)}>
+        <Icon name={t.icon} size={15} class="dnsx-tab-icon" />
+        <span>{t.name}</span>
+      </button>
+    ))}
+  </div>
+
+  <div class="dnsx-panels">
+    {TECHS.map((t, i) => (
+      <article class="dnsx-panel" data-i={i} data-hidden={i !== 0 ? 'true' : undefined}>
+        <div class="dnsx-panel-head">
+          <h4 class="dnsx-panel-name">{t.name}</h4>
+          {t.attack && (
+            <a class="dnsx-attack" href={t.attack.href} target="_blank" rel="noopener noreferrer">
+              <Icon name="lucide:shield" size={12} />ATT&amp;CK {t.attack.id}
+            </a>
+          )}
+        </div>
+
+        <p class="dnsx-how">{t.how}</p>
+
+        {t.wire && (
+          <div class="dnsx-wire">
+            <code class="dnsx-wire-code">{t.wire}</code>
+            {t.wireNote && <p class="dnsx-wire-note">{t.wireNote}</p>}
+          </div>
+        )}
+
+        <p class="dnsx-sub">Documented in the wild</p>
+        <ul class="dnsx-cases">
+          {t.cases.map((c) => (
+            <li class="dnsx-case">
+              <a class="dnsx-case-name" href={c.href} target="_blank" rel="noopener noreferrer">
+                {c.name}<Icon name="lucide:arrow-up-right" size={12} class="dnsx-case-arrow" />
+              </a>
+              <span class="dnsx-case-what">{c.what}</span>
+            </li>
+          ))}
+        </ul>
+
+        <p class="dnsx-detect">
+          <Icon name="lucide:search" size={14} class="dnsx-detect-icon" />
+          <span><strong>How it's caught:</strong> {t.detect}</span>
+        </p>
+      </article>
+    ))}
+  </div>
+
+  <p class="dnsx-foot">
+    <Icon name="lucide:info" size={14} />
+    <span>Defenders lean on <strong>passive DNS</strong> (retro-hunting), <strong>Response Policy Zones</strong> (a resolver-level DNS firewall), newly-registered-domain and threat-intel feeds, and <strong>egress control</strong>, only the enterprise resolver may reach port 53.</span>
+  </p>
+</figure>
+
+<style>
+  .dnsx {
+    margin-block: 2.5rem;
+    font-family: var(--font-sans);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.35rem 1.5rem 1.4rem;
+    background: color-mix(in srgb, var(--subtle-bg) 40%, transparent);
+  }
+
+  .dnsx-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+  .dnsx-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--page-bg);
+    color: var(--text-secondary);
+    font: 500 0.82rem var(--font-sans);
+    cursor: pointer;
+    transition: border-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth), background 0.2s var(--ease-smooth);
+  }
+  .dnsx-tab:hover { border-color: var(--color-gray-400); color: var(--page-text); }
+  .dnsx-tab-icon { color: var(--muted); flex-shrink: 0; }
+  .dnsx-tab[aria-selected='true'] { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .dnsx-tab[aria-selected='true'] .dnsx-tab-icon { color: #fff; }
+
+  .dnsx-panel[data-hidden] { display: none; }
+
+  .dnsx-panel-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .dnsx-panel-name { font: 600 1.05rem var(--font-sans); color: var(--page-text); margin: 0; letter-spacing: -0.01em; }
+  .dnsx-attack {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font: 600 0.66rem var(--font-mono);
+    letter-spacing: 0.03em;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+    color: var(--accent);
+    text-decoration: none;
+    transition: background 0.2s var(--ease-smooth);
+  }
+  .dnsx-attack:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+  .dnsx-how { font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary); margin: 0 0 1rem; }
+
+  .dnsx-wire {
+    padding: 0.75rem 0.9rem;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--code-bg, var(--subtle-bg));
+    margin-bottom: 1rem;
+  }
+  .dnsx-wire-code {
+    display: block;
+    font: 0.78rem var(--font-mono);
+    line-height: 1.65;
+    color: var(--text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .dnsx-wire-note { margin: 0.5rem 0 0; font-size: 0.72rem; color: var(--muted); }
+
+  .dnsx-sub {
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.5rem;
+  }
+  .dnsx-cases { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+  .dnsx-case { display: flex; flex-direction: column; gap: 0.15rem; }
+  .dnsx-case-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font: 600 0.85rem var(--font-mono);
+    color: var(--accent);
+    text-decoration: none;
+    width: fit-content;
+  }
+  .dnsx-case-name:hover { text-decoration: underline; }
+  .dnsx-case-arrow { flex-shrink: 0; }
+  .dnsx-case-what { font-size: 0.82rem; line-height: 1.5; color: var(--muted); }
+
+  .dnsx-detect {
+    display: flex;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.75rem 0.9rem;
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+  .dnsx-detect-icon { flex-shrink: 0; margin-top: 0.15rem; color: var(--accent); }
+  .dnsx-detect strong { color: var(--page-text); }
+
+  .dnsx-foot {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.25rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .dnsx-foot :global(svg) { flex-shrink: 0; margin-top: 0.15rem; }
+  .dnsx-foot strong { color: var(--text-secondary); }
+
+  @media (max-width: 560px) {
+    .dnsx { padding: 1.1rem 1rem 1.2rem; }
+    .dnsx-tab { padding: 0.4rem 0.7rem; font-size: 0.78rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dnsx-tab { transition: none; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.dnsx').forEach((root) => {
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.dnsx-tab')];
+    const panels = [...root.querySelectorAll<HTMLElement>('.dnsx-panel')];
+    tabs.forEach((tab, i) =>
+      tab.addEventListener('click', () => {
+        tabs.forEach((t, n) => t.setAttribute('aria-selected', String(n === i)));
+        panels.forEach((p, n) => (n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true')));
+      }),
+    );
+  });
+</script>
