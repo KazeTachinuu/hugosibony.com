@@ -309,13 +309,70 @@
     padding-top: 1rem;
   }
 
+  /* Vertical variants of the packet travel, used in the mobile layout. */
+  @keyframes dns-travel-out-v {
+    0% { top: 0; opacity: 0; }
+    2% { opacity: 1; }
+    15% { opacity: 1; }
+    17% { top: calc(100% - 8px); opacity: 0; }
+    100% { top: calc(100% - 8px); opacity: 0; }
+  }
+  @keyframes dns-travel-back-v {
+    0% { top: calc(100% - 8px); opacity: 0; }
+    2% { opacity: 1; }
+    15% { opacity: 1; }
+    17% { top: 0; opacity: 0; }
+    100% { top: 0; opacity: 0; }
+  }
+
+  /* Mobile: reflow the horizontal round trip into a vertical stack so it fits
+     without scrolling. Nodes stack; each lane becomes one vertical wire with
+     the query chip on the left, the answer chip on the right, and the packet
+     travelling down then back up. */
   @media (max-width: 560px) {
-    .dns-isp { padding: 1.1rem 1rem; }
-    .dns-isp-diagram { gap: 0.4rem; min-width: 23rem; }
-    .dns-isp-icon { width: 2.5rem; height: 2.5rem; }
-    .dns-isp-icon svg { width: 1.25rem; height: 1.25rem; }
-    .dns-isp-chip { font-size: 0.62rem; padding: 0.1rem 0.3rem; }
-    .dns-isp-lane { gap: 1.4rem; }
+    .dns-isp { padding: 1.25rem 1.1rem; }
+    .dns-isp-scroll { overflow: visible; margin-inline: 0; padding-inline: 0; }
+    .dns-isp-diagram { grid-template-columns: 1fr; min-width: 0; gap: 0; justify-items: center; }
+    .dns-isp-icon { width: 2.6rem; height: 2.6rem; }
+    .dns-isp-icon svg { width: 1.3rem; height: 1.3rem; }
+
+    .dns-isp-lane {
+      flex-direction: row;
+      width: 100%;
+      height: 3.4rem;
+      justify-content: center;
+      align-items: stretch;
+      gap: 0;
+      position: relative;
+    }
+    .dns-isp-wire {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      transform: translateX(-50%);
+    }
+    .dns-isp-out::after {
+      top: auto; bottom: -2px; left: 50%; right: auto;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--color-gray-400);
+      border-bottom-width: 0;
+    }
+    .dns-isp-back::after {
+      top: -2px; bottom: auto; left: 50%; right: auto;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-bottom-color: var(--color-gray-400);
+      border-top-width: 0;
+    }
+    .dns-isp-chip { left: 50%; top: 50%; font-size: 0.64rem; padding: 0.12rem 0.4rem; }
+    .dns-isp-out .dns-isp-chip { transform: translate(calc(-100% - 0.45rem), -50%); }
+    .dns-isp-back .dns-isp-chip { transform: translate(0.45rem, -50%); }
+    .dns-isp-dot { top: 0; left: -3px; }
+    .dns-isp-out .dns-isp-dot { animation-name: dns-travel-out-v; }
+    .dns-isp-back .dns-isp-dot { animation-name: dns-travel-back-v; }
   }
 </style>
 
