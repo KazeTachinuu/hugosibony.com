@@ -132,6 +132,11 @@ export const BOOKMARKS = {
 
   "PDF & Documents": [
     {
+      name: "Authorized",
+      url: "https://authorized.xultra.fun/",
+      description: "Draft signature-ready authorization letters and download them as PDFs",
+    },
+    {
       name: "Filigrane Local",
       url: "https://filigrane-local.fr",
       description: "Watermark PDFs and images, 100% local, nothing uploaded (mine)",
