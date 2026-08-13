@@ -1,0 +1,25 @@
+---
+title: "Honest progress"
+description: "Counters for instant steps, native tool progress for slow ones, no theater"
+category: "Shell"
+date: 2026-08-13T12:00:00+02:00
+updated: 2026-08-13
+---
+
+Instant steps get a `[n/N]` counter, never an animated bar: a progress bar
+over four symlinks is animation over nothing. Slow steps reuse the tool's
+native progress (`git --progress`, `curl -#`), which already knows totals,
+throughput, and ETA better than you do. Progress goes to the TTY only; piped
+output stays clean.
+
+```bash
+TOTAL=3 N=0    # keep TOTAL equal to the number of steps
+step() { N=$((N + 1)); ok "[$N/$TOTAL] $1"; }
+
+# single-line ticker for loops over many items; cleans up after itself
+tick()    { [ -t 1 ] && printf "\r    %2d/%d %s\033[K" "$1" "$2" "$3" || true; }
+tickend() { [ -t 1 ] && printf '\r\033[K' || true; }
+
+# curl: progress bar on a TTY, silent when piped (stderr carries the bar)
+if [ -t 2 ]; then CURL="curl -f#L"; else CURL="curl -fsSL"; fi
+```

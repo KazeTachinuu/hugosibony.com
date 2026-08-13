@@ -1,0 +1,30 @@
+---
+title: "Idempotent symlink"
+description: "Symlink that converges in zero work, backs up once, never dangles"
+category: "Shell"
+date: 2026-08-13T12:00:00+02:00
+updated: 2026-08-13
+---
+
+The core of a dotfiles installer. Idempotency comes from checking desired
+state, not remembering past actions: a rerun that prints only `[=]` lines is
+visual proof the system is converged. A pre-existing real file is kept once
+as `*.backup`; a missing source is skipped instead of creating a dangling
+link. Uses the [marker output](/snippets/marker-output/) helpers.
+
+```bash
+link() {
+    src="$1" dst="$2"
+    [ -e "$src" ] || { warn "$src missing, skipped"; return 0; }
+    [ "$(readlink "$dst" 2>/dev/null)" = "$src" ] && { skip "$dst"; return 0; }
+    if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+        mv "$dst" "$dst.backup"
+        warn "kept old file as $dst.backup"
+    fi
+    mkdir -p "$(dirname "$dst")"
+    ln -sfn "$src" "$dst"
+    ok "linked $dst"
+}
+```
+
+In use in my [dotfiles installer](/snippets/install_script/).

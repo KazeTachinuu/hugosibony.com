@@ -1,0 +1,39 @@
+---
+title: "Pinned fetch"
+description: "Checksummed downloads for installers: pinned ref, sha256, atomic staging"
+category: "Shell"
+date: 2026-08-13T12:00:00+02:00
+updated: 2026-08-13
+---
+
+Supply-chain-sane downloads for curl-able installers: HTTPS only with no
+protocol downgrade, a pinned commit or tag (never a mutable branch), sha256
+before use, atomic `.new.*` staging so nothing half-downloaded is ever
+installed, and warn-and-continue so one failed optional tool never kills the
+install. Uses the [marker output](/snippets/marker-output/) helpers.
+
+```bash
+CURL="curl -fsSL --proto =https --tlsv1.2 --retry 3"
+verified() { printf '%s  %s\n' "$2" "$1" | sha256sum -c - >/dev/null 2>&1; }
+trap 'rm -f .new.*' EXIT
+
+# fetch_pinned <name> <url-at-pinned-ref> <sha256> <dest>
+fetch_pinned() {
+    [ -e "$4" ] && { skip "$1: already installed"; return 0; }
+    if $CURL -o ".new.$1" "$2" && verified ".new.$1" "$3"; then
+        mv ".new.$1" "$4" && chmod +x "$4"
+        ok "$1: installed"
+    else
+        warn "$1: fetch or checksum failed, skipped"
+    fi
+}
+```
+
+The pinning side of the contract: commit, pin to that commit, and verify the
+raw URL serves the pinned bytes before pushing the installer that trusts it.
+
+```bash
+PIN=$(git rev-parse HEAD)
+SHA=$(sha256sum tool.sh | cut -d' ' -f1)
+curl -fsSL "$RAW/$PIN/tool.sh" | sha256sum | grep -q "$SHA"
+```
