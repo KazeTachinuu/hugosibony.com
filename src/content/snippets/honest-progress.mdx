@@ -6,11 +6,9 @@ date: 2026-08-13T12:00:00+02:00
 updated: 2026-08-13
 ---
 
-Instant steps get a `[n/N]` counter, never an animated bar: a progress bar
-over four symlinks is animation over nothing. Slow steps reuse the tool's
-native progress (`git --progress`, `curl -#`), which already knows totals,
-throughput, and ETA better than you do. Progress goes to the TTY only; piped
-output stays clean.
+Counters for instant steps (a bar over four symlinks is animation over
+nothing); the tool's native progress for slow ones (`git --progress`,
+`curl -#`), which already knows totals and ETA. TTY only, piped output clean.
 
 ```bash
 TOTAL=3 N=0    # keep TOTAL equal to the number of steps

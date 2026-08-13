@@ -6,11 +6,8 @@ date: 2026-08-13T12:00:00+02:00
 updated: 2026-08-13
 ---
 
-Supply-chain-sane downloads for curl-able installers: HTTPS only with no
-protocol downgrade, a pinned commit or tag (never a mutable branch), sha256
-before use, atomic `.new.*` staging so nothing half-downloaded is ever
-installed, and warn-and-continue so one failed optional tool never kills the
-install. Uses the [marker output](/snippets/marker-output/) helpers.
+HTTPS only, pinned ref (never a mutable branch), sha256 before use, atomic
+staging, warn-and-continue. Pairs with [marker output](/snippets/marker-output/).
 
 ```bash
 CURL="curl -fsSL --proto =https --tlsv1.2 --retry 3"
@@ -29,8 +26,8 @@ fetch_pinned() {
 }
 ```
 
-The pinning side of the contract: commit, pin to that commit, and verify the
-raw URL serves the pinned bytes before pushing the installer that trusts it.
+The pinning side: commit, pin to that commit, verify the raw URL serves
+the pinned bytes before pushing the installer that trusts it.
 
 ```bash
 PIN=$(git rev-parse HEAD)

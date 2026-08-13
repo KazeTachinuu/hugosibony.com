@@ -6,10 +6,9 @@ date: 2026-08-13T12:00:00+02:00
 updated: 2026-08-13
 ---
 
-The marker carries the state, the color just reinforces it: `[+]` did
-something, `[=]` already correct, `[-]` failed but kept going, `[x]` fatal.
-Colors only on a TTY, honoring `NO_COLOR` and `TERM=dumb`; piped output stays
-plain with the markers intact.
+The marker carries the state, the color reinforces it. Colors only on a
+TTY, honoring `NO_COLOR` and `TERM=dumb`; piped output stays plain, markers
+intact.
 
 ```bash
 # [*] info  [+] did something  [=] already converged  [-] warn, kept going  [x] fatal
