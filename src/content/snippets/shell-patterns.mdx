@@ -1,0 +1,37 @@
+---
+title: "Shell patterns"
+description: "Reusable patterns for installers and CLI tools: marker output, idempotent symlinks, pinned checksummed fetches, honest progress"
+category: "Shell"
+date: 2026-08-13T12:00:00+02:00
+updated: 2026-08-13
+---
+
+Patterns I copy into every installer script, from
+[utils](https://github.com/KazeTachinuu/utils). Copy-paste, not a library:
+install scripts should stay single-file and curl-able.
+
+## Marker output
+
+Colors only on a TTY, honoring `NO_COLOR` and `TERM=dumb`; piped output stays
+plain with the markers intact.
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/utils/master/markers.sh" lang="bash" />
+
+## Idempotent symlink
+
+Zero work when converged, one backup, never a dangling link. A rerun that
+prints only `[=]` lines is visual proof of idempotency.
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/utils/master/link.sh" lang="bash" />
+
+## Pinned, checksummed fetch
+
+HTTPS only, pinned ref, sha256 before use, atomic staging, warn-and-continue.
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/utils/master/fetch-pinned.sh" lang="bash" />
+
+## Progress without theater
+
+Counters for instant steps, the tool's native progress for slow ones.
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/utils/master/progress.sh" lang="bash" />
