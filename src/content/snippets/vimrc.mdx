@@ -1,22 +1,39 @@
 ---
 title: ".vimrc config file"
-description: "My Vim config, with a minimal variant for EPITA exams"
+description: "My Vim configs: 3-line exam core, full EPITA PIE setup, and a plugin-free daily fallback"
 category: "Vim"
 date: 2024-06-13T17:41:36-04:00
-updated: 2026-07-13
+updated: 2026-08-13
 ---
 
+Part of my [EPITA PIE starter kit](https://github.com/KazeTachinuu/epita-ing1-setup):
+vim with clangd LSP, auto-pairs, snippets and format-on-save, reinstalled
+automatically at every PIE login.
+
 ## Installation
+
 ```shell
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/KazeTachinuu/config/master/installvim.sh)"
+curl -fsSL https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/setup.sh | sh
 ```
 
 ## Configuration
 
-### Basic Config (EPITA's C Exams)
+### Exam Config (memorize these 3 lines)
 
-<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/config/master/.basicvimrc" lang="vim" />
+Exam machines have no AFS and no network, so nothing installs. Line 1
+must come first: writing any `~/.vimrc` silently disables the built-in
+`defaults.vim`, and line 1 turns it back on.
 
-### Complete Config
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/vimrc.exam" lang="vim" />
 
-<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/config/master/.vimrc" lang="vim" />
+### Complete Config (PIE)
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/vimrc" lang="vim" />
+
+### Daily Fallback (dotfiles)
+
+The same core, minus the PIE-only parts (AFS plugins, LSP, clipboard hack).
+Neovim is my daily driver; this is the vim that answers `vi` on my machines,
+linked by my [dotfiles](https://github.com/KazeTachinuu/dotfiles) installer.
+
+<GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/dotfiles/master/vimrc" lang="vim" />
