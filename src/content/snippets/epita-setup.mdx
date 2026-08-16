@@ -1,0 +1,27 @@
+---
+title: "EPITA PIE Setup"
+description: "One-liner to install my EPITA dev environment on any PIE machine"
+category: "Dotfiles"
+date: 2026-08-16T12:00:00+02:00
+---
+
+The PIE wipes your home every session but re-runs `~/afs/.confs/install.sh`
+at each login; this kit lives there and re-links itself, so it follows you
+to every machine on every campus. Source and full feature list:
+[epita-ing1-setup](https://github.com/KazeTachinuu/epita-ing1-setup).
+
+## One-Liner
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/setup.sh | sh
+```
+
+Log out, log back in. Re-run any time to update.
+
+## Actual Script
+
+<GithubRaw
+  url="https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/setup.sh"
+  lang="bash"
+  title="setup.sh"
+/>
