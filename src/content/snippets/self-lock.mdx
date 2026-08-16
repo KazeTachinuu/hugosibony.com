@@ -3,23 +3,21 @@ title: "Self-locking script"
 description: "One line at the top makes concurrent runs impossible"
 category: "Shell"
 date: 2026-08-13T13:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
-For anything cron or a login hook might start twice (from the flock man
-page): the script re-executes itself under `flock`, using its own file as
-the lock. The second invocation exits instead of racing the first.
+For anything cron or a login hook might start twice (straight from the
+flock man page): the script re-executes itself under `flock`, using its own
+file as the lock. The second invocation exits instead of racing the first.
 
 ```bash
 [ "${FLOCKER:-}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 ```
 
-`-e` exclusive, `-n` fail instead of queue; drop `-n` to wait. The `|| :`
-pins the guard line's own exit status to 0, without it, a script whose last
-line is this guard reports failure. (`set -e` never sees the failing test:
-it is a non-final member of an `&&` list, which `set -e` exempts.)
+`-e` exclusive, `-n` fail instead of queue (drop `-n` to wait). The `|| :`
+keeps the guard line's exit status at 0; without it, a script ending on
+this line reports failure.
 
-Where it breaks: `flock` is util-linux (absent on stock macOS), and advisory
-locks are unreliable on network filesystems, on NFS or AFS, lock a file in
-`/tmp` instead of `"$0"`. Contention exits silently; log before `|| :` if
-you need to know.
+Caveats: `flock` is util-linux (absent on stock macOS), and advisory locks
+are unreliable on NFS/AFS, so lock a file in `/tmp` instead of `"$0"` there.
+Contention exits silently; log before `|| :` if you need to know.

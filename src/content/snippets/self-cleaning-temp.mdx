@@ -3,21 +3,18 @@ title: "Self-cleaning temp dir"
 description: "mktemp plus one trap: unpredictable name, guaranteed cleanup"
 category: "Shell"
 date: 2026-08-13T13:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
-Never invent temp paths: `mktemp` gives an unpredictable name (no symlink
-attacks, no collisions), and the `EXIT` trap removes it on normal exit and
-`set -e` failure.
+`mktemp` gives an unpredictable name (no symlink attacks, no collisions);
+the `EXIT` trap removes it on normal exit and `set -e` failure.
 
 ```bash
 tmp=$(mktemp -d) && trap 'rm -rf "$tmp"' EXIT
 trap 'exit 130' INT TERM    # dash and ash skip the EXIT trap on signals without this
 ```
 
-Where it breaks: bash runs the `EXIT` trap on Ctrl-C, but dash and busybox
-ash do not, hence the second line, which turns the signal into an exit that
-does. A shell has one `EXIT` trap; a second `trap ... EXIT` silently
-replaces the first, so merge cleanups into one handler. `kill -9` runs no
-trap; nothing survives that, which is why installers still stage as `.new.*`
-and rename into place.
+Two gotchas: dash and busybox ash don't run the `EXIT` trap on Ctrl-C
+(bash does), hence the second line. And a shell has only one `EXIT` trap,
+so a later `trap ... EXIT` silently replaces this one; merge cleanups into
+a single handler.

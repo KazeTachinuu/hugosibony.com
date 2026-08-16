@@ -1,14 +1,13 @@
 ---
 title: ".vimrc config file"
-description: "My Vim configs: 3-line exam core, full EPITA PIE setup, and a plugin-free daily fallback"
+description: "My Vim configs: exam machines, EPITA PIE, and my own machines"
 category: "Vim"
 date: 2024-06-13T17:41:36-04:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
 Part of my [EPITA PIE starter kit](https://github.com/KazeTachinuu/epita-ing1-setup):
-vim with clangd LSP, auto-pairs, snippets and format-on-save, reinstalled
-automatically at every PIE login.
+clangd LSP, auto-pairs, snippets, format-on-save, reinstalled at every PIE login.
 
 ## Installation
 
@@ -16,24 +15,21 @@ automatically at every PIE login.
 curl -fsSL https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/setup.sh | sh
 ```
 
-## Configuration
+## Exam Config
 
-### Exam Config (memorize these 3 lines)
-
-Exam machines have no AFS and no network, so nothing installs. Line 1
-must come first: writing any `~/.vimrc` silently disables the built-in
-`defaults.vim`, and line 1 turns it back on.
+Exam machines have no AFS and no network, so nothing installs: memorize these
+3 lines. Line 1 must come first, since writing any `~/.vimrc` disables the
+built-in `defaults.vim`.
 
 <GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/vimrc.exam" lang="vim" />
 
-### Complete Config (PIE)
+## PIE Config
 
 <GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/epita-ing1-setup/master/vimrc" lang="vim" />
 
-### Daily Fallback (dotfiles)
+## Dotfiles Config
 
-The same core, minus the PIE-only parts (AFS plugins, LSP, clipboard hack).
-Neovim is my daily driver; this is the vim that answers `vi` on my machines,
-linked by my [dotfiles](https://github.com/KazeTachinuu/dotfiles) installer.
+The same config minus the PIE-only parts, installed by my
+[dotfiles](https://github.com/KazeTachinuu/dotfiles) for when `vi` is needed.
 
 <GithubRaw url="https://raw.githubusercontent.com/KazeTachinuu/dotfiles/master/vimrc" lang="vim" />

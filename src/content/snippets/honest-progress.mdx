@@ -1,14 +1,15 @@
 ---
 title: "Honest progress"
-description: "Counters for instant steps, native tool progress for slow ones, no theater"
+description: "Step counters for fast work, native tool progress for slow work"
 category: "Shell"
 date: 2026-08-13T12:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
-Counters for instant steps (a bar over four symlinks is animation over
-nothing); the tool's native progress for slow ones (`git --progress`,
-`curl -#`), which already knows totals and ETA. TTY only, piped output clean.
+Plain counters for fast steps, and the tool's own progress output
+(`git --progress`, `curl -#`) for slow ones, since it already knows totals
+and ETA. TTY only; piped output stays clean. Uses `ok` from
+[marker output](/snippets/marker-output/).
 
 ```bash
 TOTAL=3 N=0    # keep TOTAL equal to the number of steps

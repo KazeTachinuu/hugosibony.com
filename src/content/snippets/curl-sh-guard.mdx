@@ -1,15 +1,15 @@
 ---
 title: "curl | sh truncation guard"
-description: "A half-downloaded installer must execute nothing"
+description: "Wrap installers in main() so a truncated download runs nothing"
 category: "Shell"
 date: 2026-08-13T13:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
-`curl | sh` executes the stream as it arrives; a dropped connection means sh
-runs half a script. The fix (used by rustup and Homebrew): everything
-imperative lives in one function, called on the last line. A truncated
-download defines a broken function, hits a syntax error, executes nothing.
+`curl | sh` executes the stream as it arrives, so a dropped connection runs
+half a script. Fix (used by rustup and Homebrew): put everything in one
+function, called on the last line. A truncated download defines a broken
+function, hits a syntax error, and executes nothing.
 
 ```bash
 main() {
@@ -18,7 +18,5 @@ main() {
 main "$@"
 ```
 
-Where it breaks: a truncation landing exactly after `main` but before `"$@"`
-still runs, so the script must behave identically with and without arguments.
-Function definitions and variable assignments may stay top-level; they have
-no side effects when the tail is missing.
+Function definitions and variable assignments can stay top-level; they have
+no side effects if the tail is missing.

@@ -3,11 +3,11 @@ title: "Pinned fetch"
 description: "Checksummed downloads for installers: pinned ref, sha256, atomic staging"
 category: "Shell"
 date: 2026-08-13T12:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
 HTTPS only, pinned ref (never a mutable branch), sha256 before use, atomic
-staging, warn-and-continue. Pairs with [marker output](/snippets/marker-output/).
+staging. Uses [marker output](/snippets/marker-output/).
 
 ```bash
 CURL="curl -fsSL --proto =https --tlsv1.2 --retry 3"

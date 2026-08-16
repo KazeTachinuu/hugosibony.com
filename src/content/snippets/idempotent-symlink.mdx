@@ -1,14 +1,14 @@
 ---
 title: "Idempotent symlink"
-description: "Symlink that converges in zero work, backs up once, never dangles"
+description: "Symlink helper that reruns cleanly, backs up once, never dangles"
 category: "Shell"
 date: 2026-08-13T12:00:00+02:00
-updated: 2026-08-13
+updated: 2026-08-16
 ---
 
-Check desired state instead of remembering past actions: a rerun that
-prints only `[=]` is proof of convergence. Real files are kept once as
-`*.backup`; a missing source never creates a dangling link. Pairs with
+Checks desired state instead of remembering past actions, so reruns do
+nothing. Existing real files are kept once as `*.backup`; a missing source
+is skipped instead of creating a dangling link. Uses
 [marker output](/snippets/marker-output/).
 
 ```bash
