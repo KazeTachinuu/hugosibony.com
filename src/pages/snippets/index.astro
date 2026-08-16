@@ -6,6 +6,14 @@ import { fmtDateShort } from '~/lib/fmt';
 const snippets = (await getCollection('snippets', (e) => import.meta.env.DEV || !e.data.draft)).sort(
   (a, b) => +new Date(b.data.updated ?? b.data.date) - +new Date(a.data.updated ?? a.data.date),
 );
+
+// first fenced code block of the body, trimmed to 8 lines, for the hover preview
+const preview = (body?: string) => {
+  const code = body?.match(/```[^\n]*\n([\s\S]*?)```/)?.[1];
+  if (!code) return undefined;
+  const lines = code.replace(/\s+$/, '').split('\n');
+  return lines.slice(0, 8).join('\n') + (lines.length > 8 ? '\n...' : '');
+};
 ---
 
 <Layout title="Snippets" mainClass="max-w-5xl mx-auto px-6 py-20">
@@ -13,6 +21,18 @@ const snippets = (await getCollection('snippets', (e) => import.meta.env.DEV || 
     <h1>Snippets</h1>
     <p>Short solutions to discrete problems which can be copied and pasted.</p>
   </header>
+
+  <div class="snippets-toolbar">
+    <label class="bm-search-label" for="snippet-search">Search snippets</label>
+    <div class="bm-search-wrap">
+      <svg class="bm-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <input id="snippet-search" class="bm-search" type="search" placeholder="Search snippets…" autocomplete="off" />
+    </div>
+    <p class="bm-search-count"><span id="snippet-count">{snippets.length}</span> snippets</p>
+  </div>
 
   <div class="snippets-table" role="table" aria-label="Snippets">
     <div class="snippets-table-head" role="row">
@@ -23,7 +43,11 @@ const snippets = (await getCollection('snippets', (e) => import.meta.env.DEV || 
     </div>
     <ul class="snippets-table-body">
       {snippets.map((s) => (
-        <li role="row">
+        <li
+          role="row"
+          data-snippet-row
+          data-search={`${s.data.title} ${s.data.description ?? ''} ${s.data.category ?? ''}`.toLowerCase()}
+        >
           <a href={`/snippets/${s.id}/`}>
             <span class="snippet-name">{s.data.title}</span>
             <span class="snippet-desc">{s.data.description}</span>
@@ -32,8 +56,31 @@ const snippets = (await getCollection('snippets', (e) => import.meta.env.DEV || 
               {fmtDateShort(s.data.updated ?? s.data.date)}
             </time>
           </a>
+          {preview(s.body) && <pre class="snippet-preview" aria-hidden="true">{preview(s.body)}</pre>}
         </li>
       ))}
     </ul>
+    <p id="snippet-empty" class="bm-empty" hidden>No snippets match your search.</p>
   </div>
+
+  <script>
+    const search = document.querySelector<HTMLInputElement>('#snippet-search');
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-snippet-row]'));
+    const count = document.querySelector<HTMLElement>('#snippet-count');
+    const empty = document.querySelector<HTMLElement>('#snippet-empty');
+
+    search?.addEventListener('input', () => {
+      const q = search.value.trim().toLowerCase();
+      let visible = 0;
+
+      for (const row of rows) {
+        const matches = !q || row.dataset.search?.includes(q);
+        row.hidden = !matches;
+        if (matches) visible += 1;
+      }
+
+      if (count) count.textContent = String(visible);
+      if (empty) empty.hidden = visible !== 0;
+    });
+  </script>
 </Layout>

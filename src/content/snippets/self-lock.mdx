@@ -11,7 +11,7 @@ flock man page): the script re-executes itself under `flock`, using its own
 file as the lock. The second invocation exits instead of racing the first.
 
 ```bash
-[ "${FLOCKER:-}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
+[ "${FLOCKER-}" != "$0" ] && exec env FLOCKER="$0" flock -en "$0" "$0" "$@" || :
 ```
 
 `-e` exclusive, `-n` fail instead of queue (drop `-n` to wait). The `|| :`

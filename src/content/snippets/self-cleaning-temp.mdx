@@ -11,7 +11,7 @@ the `EXIT` trap removes it on normal exit and `set -e` failure.
 
 ```bash
 tmp=$(mktemp -d) && trap 'rm -rf "$tmp"' EXIT
-trap 'exit 130' INT TERM    # dash and ash skip the EXIT trap on signals without this
+trap 'exit 130' INT TERM    # dash/ash skip EXIT on signals without this
 ```
 
 Two gotchas: dash and busybox ash don't run the `EXIT` trap on Ctrl-C
