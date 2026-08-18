@@ -7,8 +7,11 @@
   <rect x="460" y="576" width="280" height="14" rx="7" fill="#2a3341"/>
   <!-- i3 workspace bar -->
   <rect x="196" y="104" width="46" height="40" rx="6" fill="#1e8bc3"/>
+  <text x="219" y="132" font-size="24" fill="#0f1319" text-anchor="middle">1</text>
   <rect x="250" y="104" width="46" height="40" rx="6" fill="#1d2532"/>
+  <text x="273" y="132" font-size="24" fill="#7d8899" text-anchor="middle">2</text>
   <rect x="304" y="104" width="46" height="40" rx="6" fill="#1d2532"/>
+  <text x="327" y="132" font-size="24" fill="#7d8899" text-anchor="middle">3</text>
   <!-- EPITA triangle wallpaper -->
   <g opacity="0.9">
     <polygon points="340,490 560,170 780,490" fill="#12557e"/>
@@ -17,13 +20,21 @@
   </g>
   <!-- AFS login dialog -->
   <g transform="translate(600 327) scale(1.2) translate(-600 -327)">
-    <rect x="440" y="258" width="320" height="178" rx="12" fill="#eef1f5" stroke="#c3ccd8" stroke-width="2"/>
-          <rect x="480" y="288" width="240" height="28" rx="6" fill="#ffffff" stroke="#8fb5e8" stroke-width="2"/>
-      <rect x="480" y="336" width="240" height="28" rx="6" fill="#ffffff" stroke="#c3ccd8" stroke-width="2"/>
-    <rect x="470" y="384" width="120" height="32" rx="7" fill="#dde3ea"/>
-      <rect x="610" y="384" width="120" height="32" rx="7" fill="#1e8bc3"/>
-    </g>
+    <rect x="440" y="212" width="320" height="230" rx="12" fill="#eef1f5" stroke="#c3ccd8" stroke-width="2"/>
+    <text x="600" y="256" font-size="24" fill="#1c2430" text-anchor="middle" font-weight="bold">EPITA AFS</text>
+    <text x="470" y="296" font-size="18" fill="#5a6675">Connect your AFS</text>
+    <text x="470" y="333" font-size="17" fill="#5a6675">Login</text>
+    <rect x="560" y="314" width="170" height="28" rx="6" fill="#ffffff" stroke="#8fb5e8" stroke-width="2"/>
+    <text x="470" y="373" font-size="17" fill="#5a6675">Password</text>
+    <rect x="560" y="354" width="170" height="28" rx="6" fill="#ffffff" stroke="#c3ccd8" stroke-width="2"/>
+    <rect x="470" y="396" width="120" height="32" rx="7" fill="#dde3ea"/>
+    <text x="530" y="418" font-size="17" fill="#3c4654" text-anchor="middle">Cancel</text>
+    <rect x="610" y="396" width="120" height="32" rx="7" fill="#1e8bc3"/>
+    <text x="670" y="418" font-size="17" fill="#ffffff" text-anchor="middle">OK</text>
+  </g>
   <!-- statusline -->
   <rect x="172" y="490" width="856" height="58" rx="10" fill="#12161e"/>
+  <text x="210" y="530" font-size="28" fill="#3fb950">epita@pie</text>
+  <text x="990" y="530" font-size="28" fill="#7d8899" text-anchor="end">NAT · 6G · 4CPU</text>
   </g>
 </svg>

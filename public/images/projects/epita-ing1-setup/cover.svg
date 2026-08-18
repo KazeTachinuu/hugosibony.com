@@ -2,6 +2,7 @@
   <rect width="1200" height="750" fill="#0f1319"/>
   <g transform="translate(0,39)">
   <rect x="90" y="95" width="1020" height="490" rx="14" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <text x="130" y="150" font-size="28" fill="#7d8899">epita@pie:~</text>
   <line x1="90" y1="175" x2="1110" y2="175" stroke="#2a3341" stroke-width="2"/>
   <text x="130" y="250" font-size="40" fill="#dbe2ea"><tspan fill="#3fb950">$</tspan> sh setup.sh</text>
   <text x="130" y="325" font-size="38"><tspan fill="#58a6ff">[*]</tspan><tspan fill="#dbe2ea" x="230"> EPITA PIE setup</tspan></text>
