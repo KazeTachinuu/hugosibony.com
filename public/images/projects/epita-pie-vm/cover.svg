@@ -11,11 +11,25 @@
   <text x="273" y="132" font-size="24" fill="#7d8899" text-anchor="middle">2</text>
   <rect x="304" y="104" width="46" height="40" rx="6" fill="#1d2532"/>
   <text x="327" y="132" font-size="24" fill="#7d8899" text-anchor="middle">3</text>
-  <!-- EPITA triangles -->
-  <g opacity="0.95">
-    <polygon points="480,420 610,180 740,420" fill="#12557e"/>
-    <polygon points="560,420 670,230 780,420" fill="#1e8bc3" opacity="0.85"/>
-    <polygon points="420,420 520,270 620,420" fill="#3aa8dd" opacity="0.7"/>
+  <!-- EPITA triangle wallpaper -->
+  <g opacity="0.9">
+    <polygon points="340,490 560,170 780,490" fill="#12557e"/>
+    <polygon points="520,490 700,220 880,490" fill="#1e8bc3" opacity="0.8"/>
+    <polygon points="260,490 420,280 580,490" fill="#3aa8dd" opacity="0.6"/>
+  </g>
+  <!-- AFS login dialog -->
+  <g>
+    <rect x="440" y="212" width="320" height="230" rx="12" fill="#eef1f5" stroke="#c3ccd8" stroke-width="2"/>
+    <text x="600" y="256" font-size="24" fill="#1c2430" text-anchor="middle" font-weight="bold">EPITA AFS</text>
+    <text x="470" y="296" font-size="18" fill="#5a6675">Connect your AFS</text>
+    <text x="470" y="333" font-size="17" fill="#5a6675">Login</text>
+    <rect x="560" y="314" width="170" height="28" rx="6" fill="#ffffff" stroke="#8fb5e8" stroke-width="2"/>
+    <text x="470" y="373" font-size="17" fill="#5a6675">Password</text>
+    <rect x="560" y="354" width="170" height="28" rx="6" fill="#ffffff" stroke="#c3ccd8" stroke-width="2"/>
+    <rect x="470" y="396" width="120" height="32" rx="7" fill="#dde3ea"/>
+    <text x="530" y="418" font-size="17" fill="#3c4654" text-anchor="middle">Cancel</text>
+    <rect x="610" y="396" width="120" height="32" rx="7" fill="#1e8bc3"/>
+    <text x="670" y="418" font-size="17" fill="#ffffff" text-anchor="middle">OK</text>
   </g>
   <!-- statusline -->
   <rect x="172" y="490" width="856" height="58" rx="10" fill="#12161e"/>
