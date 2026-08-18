@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
+  <g transform="translate(0,39)">
   <!-- prints 'H' (8*9=72) -->
   <text x="600" y="220" font-size="60" fill="#dbe2ea" text-anchor="middle">++++++++[&gt;+++++++++&lt;-]&gt;<tspan fill="#bc8cff">.</tspan></text>
   <!-- memory tape -->
@@ -20,7 +21,5 @@
     <text x="935" y="390">0</text>
   </g>
   <path d="M355 470 l-20 34 h40 z" fill="#bc8cff"/>
-  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
-  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">BRAINFUCK INTERPRETER</text>
-  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#bc8cff" text-anchor="end">8 INSTRUCTIONS</text>
+  </g>
 </svg>

@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
+  <g transform="translate(0,39)">
   <rect x="90" y="140" width="1020" height="400" rx="14" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
   <text x="140" y="240" font-size="44" xml:space="preserve"><tspan fill="#7d8899">4</tspan><tspan fill="#dbe2ea" x="230">int</tspan><tspan fill="#58a6ff"> my_func() ;</tspan></text>
   <path d="M323 260 q 15 17 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0" fill="none" stroke="#f85149" stroke-width="6"/>
@@ -7,7 +8,5 @@
   <text x="140" y="425" font-size="44"><tspan fill="#7d8899">5</tspan><tspan fill="#dbe2ea" x="230">{ return( 0 );}</tspan></text>
   <path d="M258 445 q 15 17 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0 t 30 0" fill="none" stroke="#d29922" stroke-width="6"/>
   <text x="230" y="515" font-size="34" fill="#d29922">brace on its own line</text>
-  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
-  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">EPITA-CODING-STYLE</text>
-  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#f85149" text-anchor="end">54 RULES</text>
+  </g>
 </svg>

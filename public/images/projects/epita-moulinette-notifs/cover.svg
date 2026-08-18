@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
+  <g transform="translate(0,39)">
   <rect x="130" y="196" width="940" height="280" rx="20" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
   <!-- bell -->
   <g transform="translate(195,276) scale(1.25)" stroke="#dbe2ea" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -14,7 +15,5 @@
   <!-- check circle -->
   <circle cx="930" cy="336" r="54" fill="none" stroke="#3fb950" stroke-width="9"/>
   <path d="M902 336 l20 22 l38 -44" fill="none" stroke="#3fb950" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
-  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">MOULINETTE NOTIFS</text>
-  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#3fb950" text-anchor="end">POLLS EVERY 5S</text>
+  </g>
 </svg>

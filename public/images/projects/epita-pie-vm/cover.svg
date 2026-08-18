@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
+  <g transform="translate(0,39)">
   <!-- monitor -->
   <rect x="170" y="80" width="860" height="470" rx="18" fill="#161c26" stroke="#2a3341" stroke-width="3"/>
   <rect x="530" y="550" width="140" height="26" fill="#2a3341"/>
@@ -35,7 +36,5 @@
   <rect x="172" y="490" width="856" height="58" rx="10" fill="#12161e"/>
   <text x="210" y="530" font-size="28" fill="#3fb950">epita@pie</text>
   <text x="990" y="530" font-size="28" fill="#7d8899" text-anchor="end">NAT · 6G · 4CPU</text>
-  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
-  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">EPITA PIE VM</text>
-  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#1e8bc3" text-anchor="end">THE PIE, AT HOME</text>
+  </g>
 </svg>
