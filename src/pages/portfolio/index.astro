@@ -12,6 +12,7 @@ const counts = new Map<string, number>();
 for (const p of projects) for (const c of p.data.categories) if (c !== 'projects') counts.set(c, (counts.get(c) ?? 0) + 1);
 const cats = [...counts.keys()].sort();
 const icons: Record<string, string> = { epita: '/images/epita-mark.png' };
+const epitaCount = counts.get('epita') ?? 0;
 ---
 
 <Layout title="Portfolio" mainClass="max-w-5xl mx-auto px-6 py-16">
@@ -29,9 +30,28 @@ const icons: Record<string, string> = { epita: '/images/epita-mark.png' };
   </div>
 
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    {epitaCount > 0 && (
+      <a href="/portfolio/?cat=epita" class="project-card project-group-card" data-group="epita">
+        <div class="project-img project-group-img">
+          <img src="/images/epita-logo-crop.png" alt="" loading="lazy" />
+        </div>
+        <div class="project-meta">
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="project-title">EPITA Tools</h2>
+            <span class="project-date">{epitaCount} tools</span>
+          </div>
+          <p class="project-desc">Everything I built for EPITA students: PIE at home, setup kit, moulinette notifications, coding style checkers.</p>
+        </div>
+      </a>
+    )}
     {projects.map((p) => {
       return (
-        <a href={`/portfolio/${p.id}/`} class="project-card" data-cats={p.data.categories.join(' ')}>
+        <a
+          href={`/portfolio/${p.id}/`}
+          class="project-card"
+          data-cats={p.data.categories.join(' ')}
+          hidden={p.data.categories.includes('epita')}
+        >
           <div class="project-img">
             {p.data.image ? (
               <img src={p.data.image} alt="" loading="lazy" />
@@ -62,25 +82,35 @@ const icons: Record<string, string> = { epita: '/images/epita-mark.png' };
 
   <script>
     const buttons = Array.from(document.querySelectorAll<HTMLElement>('.project-filter'));
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('.project-card'));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-cats]'));
+    const groupCard = document.querySelector<HTMLElement>('[data-group="epita"]');
 
+    // Default view folds the epita tools behind the group card; the epita
+    // filter (chip or group card) unfolds them and hides the group card.
     const apply = (cat: string) => {
       for (const b of buttons) b.classList.toggle('is-active', (b.dataset.cat ?? '') === cat);
       for (const card of cards) {
-        card.hidden = !!cat && !(card.dataset.cats ?? '').split(' ').includes(cat);
+        const cs = (card.dataset.cats ?? '').split(' ');
+        card.hidden = cat ? !cs.includes(cat) : cs.includes('epita');
       }
+      if (groupCard) groupCard.hidden = !!cat;
+    };
+
+    const go = (cat: string) => {
+      apply(cat);
+      history.replaceState(null, '', cat ? `?cat=${cat}` : location.pathname);
     };
 
     for (const btn of buttons) {
-      btn.addEventListener('click', () => {
-        const cat = btn.dataset.cat ?? '';
-        apply(cat);
-        history.replaceState(null, '', cat ? `?cat=${cat}` : location.pathname);
-      });
+      btn.addEventListener('click', () => go(btn.dataset.cat ?? ''));
     }
+    groupCard?.addEventListener('click', (e) => {
+      e.preventDefault();
+      go('epita');
+    });
 
     // shareable filter links: /portfolio/?cat=epita
     const initial = new URLSearchParams(location.search).get('cat');
-    if (initial && buttons.some((b) => b.dataset.cat === initial)) apply(initial);
+    apply(initial && buttons.some((b) => b.dataset.cat === initial) ? initial : '');
   </script>
 </Layout>

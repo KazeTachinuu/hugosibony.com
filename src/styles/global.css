@@ -869,6 +869,7 @@ a { color: inherit; text-decoration: none; }
     background: var(--page-text); color: var(--page-bg); border-color: var(--page-text);
   }
   .project-filter.is-active .project-filter-count { color: var(--page-bg); opacity: 0.6; }
+  .project-group-img img { object-fit: contain; padding: 1.75rem; }
 
   .project-card {
     @apply block min-w-0 rounded-xl overflow-hidden transition-colors duration-200;
