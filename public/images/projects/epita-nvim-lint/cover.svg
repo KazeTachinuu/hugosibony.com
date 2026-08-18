@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+  <rect x="90" y="95" width="1020" height="490" rx="14" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <!-- sign column -->
+  <rect x="92" y="97" width="76" height="486" rx="12" fill="#12161e"/>
+  <text x="130" y="200" font-size="30" fill="#d29922" text-anchor="middle">W</text>
+  <text x="130" y="330" font-size="30" fill="#f85149" text-anchor="middle">E</text>
+  <!-- skeleton code lines -->
+  <g fill="#2a3341">
+    <rect x="210" y="178" width="380" height="20" rx="10"/>
+    <rect x="210" y="243" width="520" height="20" rx="10"/>
+    <rect x="250" y="308" width="300" height="20" rx="10"/>
+    <rect x="250" y="373" width="430" height="20" rx="10"/>
+    <rect x="210" y="438" width="240" height="20" rx="10"/>
+  </g>
+  <path d="M210 335 q 12 14 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0" fill="none" stroke="#f85149" stroke-width="5"/>
+  <!-- statusline -->
+  <rect x="92" y="523" width="1016" height="60" rx="10" fill="#1d2532"/>
+  <text x="130" y="562" font-size="26" fill="#3fb950">NORMAL</text>
+  <text x="290" y="562" font-size="26" fill="#dbe2ea">main.c</text>
+  <text x="1070" y="562" font-size="26" fill="#7d8899" text-anchor="end">epita-coding-style  W1 E1</text>
+  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
+  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">EPITA-NVIM-LINT</text>
+  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#d29922" text-anchor="end">INLINE DIAGNOSTICS</text>
+</svg>

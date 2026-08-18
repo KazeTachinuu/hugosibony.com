@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+  <!-- monitor -->
+  <rect x="170" y="80" width="860" height="470" rx="18" fill="#161c26" stroke="#2a3341" stroke-width="3"/>
+  <rect x="530" y="550" width="140" height="26" fill="#2a3341"/>
+  <rect x="460" y="576" width="280" height="14" rx="7" fill="#2a3341"/>
+  <!-- i3 workspace bar -->
+  <rect x="196" y="104" width="46" height="40" rx="6" fill="#1e8bc3"/>
+  <text x="219" y="132" font-size="24" fill="#0f1319" text-anchor="middle">1</text>
+  <rect x="250" y="104" width="46" height="40" rx="6" fill="#1d2532"/>
+  <text x="273" y="132" font-size="24" fill="#7d8899" text-anchor="middle">2</text>
+  <rect x="304" y="104" width="46" height="40" rx="6" fill="#1d2532"/>
+  <text x="327" y="132" font-size="24" fill="#7d8899" text-anchor="middle">3</text>
+  <!-- EPITA triangles -->
+  <g opacity="0.95">
+    <polygon points="480,420 610,180 740,420" fill="#12557e"/>
+    <polygon points="560,420 670,230 780,420" fill="#1e8bc3" opacity="0.85"/>
+    <polygon points="420,420 520,270 620,420" fill="#3aa8dd" opacity="0.7"/>
+  </g>
+  <!-- statusline -->
+  <rect x="172" y="490" width="856" height="58" rx="10" fill="#12161e"/>
+  <text x="210" y="528" font-size="24" fill="#3fb950">epita@pie</text>
+  <text x="990" y="528" font-size="24" fill="#7d8899" text-anchor="end">NAT · 6G · 4CPU</text>
+  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
+  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">EPITA PIE VM</text>
+  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#1e8bc3" text-anchor="end">THE PIE, AT HOME</text>
+</svg>

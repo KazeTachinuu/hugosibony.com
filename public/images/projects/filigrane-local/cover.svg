@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+  <!-- document -->
+  <g>
+    <rect x="420" y="90" width="360" height="480" rx="10" fill="#e9ecf1"/>
+    <g fill="#b9c2cf">
+      <rect x="460" y="140" width="200" height="16" rx="8"/>
+      <rect x="460" y="185" width="280" height="10" rx="5"/>
+      <rect x="460" y="212" width="280" height="10" rx="5"/>
+      <rect x="460" y="239" width="230" height="10" rx="5"/>
+      <rect x="460" y="300" width="280" height="10" rx="5"/>
+      <rect x="460" y="327" width="280" height="10" rx="5"/>
+      <rect x="460" y="354" width="180" height="10" rx="5"/>
+      <rect x="460" y="415" width="280" height="10" rx="5"/>
+      <rect x="460" y="442" width="280" height="10" rx="5"/>
+      <rect x="460" y="469" width="250" height="10" rx="5"/>
+    </g>
+    <g font-size="44" fill="#1e4f8f" opacity="0.35" text-anchor="middle">
+      <text x="600" y="280" transform="rotate(-30 600 280)">SPECIMEN</text>
+      <text x="600" y="450" transform="rotate(-30 600 450)">SPECIMEN</text>
+    </g>
+  </g>
+  <!-- no-cloud: crossed-out cloud -->
+  <g transform="translate(870,150)" stroke="#7d8899" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M25 60 a 22 22 0 1 1 8 -43 a 30 30 0 0 1 57 8 a 19 19 0 0 1 -4 35 z"/>
+    <line x1="-8" y1="72" x2="100" y2="-12" stroke="#f85149" stroke-width="7"/>
+  </g>
+  <text x="600" y="625" font-size="26" fill="#7d8899" text-anchor="middle">100% dans le navigateur, aucun envoi</text>
+  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
+  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">FILIGRANE LOCAL</text>
+  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#1e8bc3" text-anchor="end">ZERO SERVEUR</text>
+</svg>

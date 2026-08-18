@@ -1,6 +1,7 @@
 ---
 import Layout from '~/layouts/Layout.astro';
 import PageHeader from '~/components/PageHeader.astro';
+import { Icon } from 'astro-icon/components';
 import { getCollection } from 'astro:content';
 
 const projects = (await getCollection('portfolio', (e) => import.meta.env.DEV || !e.data.draft)).sort(
@@ -29,18 +30,21 @@ const epitaCount = counts.get('epita') ?? 0;
     ))}
   </div>
 
-  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  <div class="project-grid grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
     {epitaCount > 0 && (
       <a href="/portfolio/?cat=epita" class="project-card project-group-card" data-group="epita">
         <div class="project-img project-group-img">
-          <img src="/images/epita-logo-crop.png" alt="" loading="lazy" />
+          <img src="/images/epita-logo-transparent.png" alt="" loading="lazy" />
         </div>
         <div class="project-meta">
           <div class="flex items-baseline justify-between gap-3">
             <h2 class="project-title">EPITA Tools</h2>
             <span class="project-date">{epitaCount} tools</span>
           </div>
-          <p class="project-desc">Everything I built for EPITA students: PIE at home, setup kit, moulinette notifications, coding style checkers.</p>
+          <p class="project-desc">The toolbox I built for EPITA students: PIE at home, setup kit, moulinette notifications.</p>
+          <span class="project-group-cta">
+            browse the toolbox <Icon name="lucide:arrow-right" size={13} />
+          </span>
         </div>
       </a>
     )}
@@ -96,9 +100,16 @@ const epitaCount = counts.get('epita') ?? 0;
       if (groupCard) groupCard.hidden = !!cat;
     };
 
+    const grid = document.querySelector<HTMLElement>('.project-grid');
+
     const go = (cat: string) => {
       apply(cat);
       history.replaceState(null, '', cat ? `?cat=${cat}` : location.pathname);
+      if (grid) {
+        grid.classList.remove('is-filtering');
+        void grid.offsetWidth; // restart the card-in animation
+        grid.classList.add('is-filtering');
+      }
     };
 
     for (const btn of buttons) {

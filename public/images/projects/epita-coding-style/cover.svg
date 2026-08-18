@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+  <rect x="90" y="140" width="1020" height="400" rx="14" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <text x="140" y="235" font-size="34"><tspan fill="#7d8899">4</tspan><tspan fill="#dbe2ea" x="220">int</tspan><tspan fill="#58a6ff"> my_func() ;</tspan></text>
+  <path d="M292 252 q 12 14 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0" fill="none" stroke="#f85149" stroke-width="5"/>
+  <text x="220" y="322" font-size="28" fill="#f85149">empty parameter list must be (void)</text>
+  <text x="140" y="415" font-size="34"><tspan fill="#7d8899">5</tspan><tspan fill="#dbe2ea" x="220">{ return( 0 );}</tspan></text>
+  <path d="M244 432 q 12 14 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0 t 24 0" fill="none" stroke="#d29922" stroke-width="5"/>
+  <text x="220" y="502" font-size="28" fill="#d29922">brace on its own line, no space after (</text>
+  <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
+  <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">EPITA-CODING-STYLE</text>
+  <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#f85149" text-anchor="end">54 RULES</text>
+</svg>
