@@ -25,7 +25,6 @@
     <path d="M25 60 a 22 22 0 1 1 8 -43 a 30 30 0 0 1 57 8 a 19 19 0 0 1 -4 35 z"/>
     <line x1="-8" y1="72" x2="100" y2="-12" stroke="#f85149" stroke-width="7"/>
   </g>
-  <text x="600" y="625" font-size="26" fill="#7d8899" text-anchor="middle">100% dans le navigateur, aucun envoi</text>
   <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
   <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">FILIGRANE LOCAL</text>
   <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#1e8bc3" text-anchor="end">ZERO SERVEUR</text>

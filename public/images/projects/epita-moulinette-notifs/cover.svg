@@ -1,20 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
-  <rect x="190" y="200" width="820" height="230" rx="18" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <rect x="130" y="196" width="940" height="280" rx="20" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
   <!-- bell -->
-  <g transform="translate(255,270)" stroke="#dbe2ea" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(195,276) scale(1.25)" stroke="#dbe2ea" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path d="M55 78 a 39 39 0 0 0 8 -22 v -14 a 33 33 0 1 0 -66 0 v 14 a 39 39 0 0 0 8 22 z" transform="translate(5,-10)"/>
     <path d="M22 78 a 11 11 0 0 0 22 0" transform="translate(5,-10)"/>
   </g>
-  <circle cx="342" cy="248" r="14" fill="#f85149"/>
+  <circle cx="303" cy="269" r="16" fill="#f85149"/>
   <!-- toast text -->
-  <text x="400" y="290" font-size="32" fill="#dbe2ea">Moulinette</text>
-  <text x="400" y="345" font-size="28" fill="#7d8899">hello_world-v1 processed</text>
-  <text x="400" y="397" font-size="28" fill="#3fb950">100% passed</text>
+  <text x="380" y="290" font-size="42" fill="#dbe2ea">Moulinette</text>
+  <text x="380" y="356" font-size="34" fill="#7d8899">hello_world-v1</text>
+  <text x="380" y="422" font-size="34" fill="#3fb950">100% passed</text>
   <!-- check circle -->
-  <circle cx="920" cy="315" r="42" fill="none" stroke="#3fb950" stroke-width="7"/>
-  <path d="M898 315 l16 17 l30 -34" fill="none" stroke="#3fb950" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="600" y="510" font-size="26" fill="#7d8899" text-anchor="middle">watching the intra so you don't have to</text>
+  <circle cx="930" cy="336" r="54" fill="none" stroke="#3fb950" stroke-width="9"/>
+  <path d="M902 336 l20 22 l38 -44" fill="none" stroke="#3fb950" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
   <line x1="0" y1="672" x2="1200" y2="672" stroke="#2a3341" stroke-width="2"/>
   <text x="90" y="717" font-size="22" letter-spacing="3" fill="#7d8899">MOULINETTE NOTIFS</text>
   <text x="1110" y="717" font-size="22" letter-spacing="3" fill="#3fb950" text-anchor="end">POLLS EVERY 5S</text>
