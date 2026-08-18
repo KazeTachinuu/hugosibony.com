@@ -1,51 +1,59 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
-  <g transform="translate(0,20)">
-  <!-- sender host -->
-  <rect x="90" y="285" width="200" height="150" rx="16" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
-  <rect x="126" y="329" width="128" height="14" rx="7" fill="#58a6ff"/>
-  <rect x="126" y="359" width="86" height="14" rx="7" fill="#3a4557"/>
-  <rect x="126" y="389" width="106" height="14" rx="7" fill="#3a4557"/>
 
-  <!-- receiver host -->
-  <rect x="910" y="285" width="200" height="150" rx="16" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
-  <rect x="946" y="329" width="128" height="14" rx="7" fill="#3fb950"/>
-  <rect x="946" y="359" width="86" height="14" rx="7" fill="#3a4557"/>
-  <rect x="946" y="389" width="106" height="14" rx="7" fill="#3a4557"/>
-
-  <!-- link -->
-  <line x1="290" y1="360" x2="910" y2="360" stroke="#2a3341" stroke-width="2" stroke-dasharray="10 12"/>
-
-  <!-- echo ping rings from sender -->
-  <g fill="none" stroke="#58a6ff" stroke-width="2">
-    <circle cx="290" cy="360" r="30" opacity="0.55"/>
-    <circle cx="290" cy="360" r="54" opacity="0.3"/>
-    <circle cx="290" cy="360" r="78" opacity="0.15"/>
+  <!-- sender: emits an innocent-looking ping -->
+  <rect x="80" y="280" width="238" height="186" rx="18" fill="#161c26" stroke="#3a4557" stroke-width="2"/>
+  <rect x="116" y="324" width="120" height="16" rx="8" fill="#58a6ff"/>
+  <rect x="116" y="358" width="150" height="12" rx="6" fill="#3a4557"/>
+  <rect x="116" y="386" width="96" height="12" rx="6" fill="#3a4557"/>
+  <g fill="none" stroke="#58a6ff" stroke-linecap="round">
+    <path d="M318 335 a40 40 0 0 1 0 72" stroke-width="4" opacity="0.7"/>
+    <path d="M336 320 a58 58 0 0 1 0 102" stroke-width="3.5" opacity="0.4"/>
+    <path d="M354 306 a76 76 0 0 1 0 130" stroke-width="3" opacity="0.2"/>
   </g>
 
-  <!-- ICMP echo packet in flight: header cells + hidden payload -->
-  <g transform="translate(470,300)">
-    <rect x="-8" y="-8" width="276" height="136" rx="16" fill="#0c0f14" stroke="#2a3341" stroke-width="2"/>
-    <!-- header fields (type, code, checksum, id/seq) -->
-    <g fill="#58a6ff">
-      <rect x="20" y="20" width="52" height="30" rx="6"/>
-      <rect x="84" y="20" width="52" height="30" rx="6"/>
-      <rect x="148" y="20" width="100" height="30" rx="6" opacity="0.55"/>
-    </g>
-    <!-- payload = hidden message bytes (exfil) -->
-    <g fill="#f85149">
-      <rect x="20" y="72" width="26" height="30" rx="6"/>
-      <rect x="58" y="72" width="26" height="30" rx="6"/>
-      <rect x="96" y="72" width="26" height="30" rx="6"/>
-      <rect x="134" y="72" width="26" height="30" rx="6"/>
-      <rect x="172" y="72" width="26" height="30" rx="6"/>
-    </g>
+  <!-- the ICMP echo packet: normal header, hidden payload -->
+  <rect x="398" y="222" width="404" height="298" rx="22" fill="#0c0f14" stroke="#2a3341" stroke-width="2"/>
+  <text x="430" y="272" font-size="27" font-weight="700" letter-spacing="2" fill="#58a6ff">ICMP · ECHO</text>
+  <!-- padlock: it looks innocent, but it carries a secret -->
+  <g transform="translate(742,244)" stroke="#f85149" stroke-width="4" fill="none">
+    <path d="M8 14 v-6 a10 10 0 0 1 20 0 v6"/>
+    <rect x="2" y="14" width="32" height="26" rx="5" fill="#f85149" stroke="none"/>
   </g>
 
-  <!-- direction arrow -->
+  <!-- header fields (normal) -->
+  <g fill="#58a6ff">
+    <rect x="430" y="296" width="78" height="52" rx="8"/>
+    <rect x="520" y="296" width="78" height="52" rx="8"/>
+    <rect x="610" y="296" width="78" height="52" rx="8" opacity="0.6"/>
+    <rect x="700" y="296" width="70" height="52" rx="8" opacity="0.6"/>
+  </g>
+  <g font-size="15" fill="#7d8899" text-anchor="middle">
+    <text x="469" y="372">TYPE</text><text x="559" y="372">CODE</text><text x="649" y="372">CKSM</text><text x="735" y="372">ID</text>
+  </g>
+  <line x1="430" y1="394" x2="770" y2="394" stroke="#2a3341" stroke-width="2"/>
+
+  <!-- payload = the exfiltrated bytes -->
+  <text x="430" y="432" font-size="19" font-weight="700" letter-spacing="1" fill="#f85149">PAYLOAD</text>
+  <g fill="#f85149">
+    <rect x="430" y="446" width="48" height="42" rx="7"/>
+    <rect x="488" y="446" width="48" height="42" rx="7"/>
+    <rect x="546" y="446" width="48" height="42" rx="7"/>
+    <rect x="604" y="446" width="48" height="42" rx="7"/>
+    <rect x="662" y="446" width="48" height="42" rx="7"/>
+    <rect x="720" y="446" width="50" height="42" rx="7"/>
+  </g>
+
+  <!-- receiver: reassembles the hidden message -->
+  <rect x="884" y="280" width="236" height="186" rx="18" fill="#161c26" stroke="#3a4557" stroke-width="2"/>
+  <rect x="920" y="324" width="120" height="16" rx="8" fill="#3fb950"/>
+  <rect x="920" y="358" width="150" height="12" rx="6" fill="#3a4557"/>
+  <rect x="920" y="386" width="96" height="12" rx="6" fill="#3a4557"/>
+
+  <!-- links + exfil direction -->
+  <line x1="318" y1="371" x2="398" y2="371" stroke="#2a3341" stroke-width="2" stroke-dasharray="9 11"/>
+  <line x1="802" y1="371" x2="884" y2="371" stroke="#2a3341" stroke-width="2" stroke-dasharray="9 11"/>
   <g stroke="#3fb950" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="620" y1="470" x2="770" y2="470"/>
-    <polyline points="748,452 772,470 748,488"/>
-  </g>
+    <line x1="470" y1="576" x2="716" y2="576"/><polyline points="694,558 720,576 694,594"/>
   </g>
 </svg>

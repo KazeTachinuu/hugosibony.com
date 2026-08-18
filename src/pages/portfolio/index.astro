@@ -4,8 +4,11 @@ import PageHeader from '~/components/PageHeader.astro';
 import { Icon } from 'astro-icon/components';
 import { getCollection } from 'astro:content';
 
+// Most-recently-updated first; ties (same updated day) fall back to newest created date.
 const projects = (await getCollection('portfolio', (e) => import.meta.env.DEV || !e.data.draft)).sort(
-  (a, b) => +new Date(b.data.updated ?? b.data.date) - +new Date(a.data.updated ?? a.data.date),
+  (a, b) =>
+    +new Date(b.data.updated ?? b.data.date) - +new Date(a.data.updated ?? a.data.date) ||
+    +new Date(b.data.date) - +new Date(a.data.date),
 );
 
 // "projects" is on every entry, useless as a filter
@@ -16,7 +19,7 @@ const icons: Record<string, string> = { epita: '/images/epita-mark.png' };
 const epitaCount = counts.get('epita') ?? 0;
 ---
 
-<Layout title="Portfolio" mainClass="max-w-5xl mx-auto px-6 py-16">
+<Layout title="Portfolio" mainClass="max-w-6xl mx-auto px-6 py-16">
   <PageHeader title="Portfolio" section="portfolio" />
 
   <div class="project-filters" role="group" aria-label="Filter projects by category">

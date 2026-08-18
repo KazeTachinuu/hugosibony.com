@@ -1,14 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
   <rect width="1200" height="750" fill="#0f1319"/>
-  <g transform="translate(0,39)">
-  <rect x="90" y="95" width="1020" height="490" rx="14" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
-  <text x="130" y="150" font-size="28" fill="#7d8899">epita@pie:~</text>
-  <line x1="90" y1="175" x2="1110" y2="175" stroke="#2a3341" stroke-width="2"/>
-  <text x="130" y="250" font-size="40" fill="#dbe2ea"><tspan fill="#3fb950">$</tspan> sh setup.sh</text>
-  <text x="130" y="325" font-size="38"><tspan fill="#58a6ff">[*]</tspan><tspan fill="#dbe2ea" x="230"> EPITA PIE setup</tspan></text>
-  <text x="130" y="393" font-size="38"><tspan fill="#3fb950">[+]</tspan><tspan fill="#dbe2ea" x="230"> linked ~/.vimrc</tspan></text>
-  <text x="130" y="461" font-size="38"><tspan fill="#3fb950">[+]</tspan><tspan fill="#dbe2ea" x="230"> linked ~/.bashrc</tspan></text>
-  <text x="130" y="537" font-size="38"><tspan fill="#3fb950">[+]</tspan><tspan fill="#dbe2ea" x="230"> done, log back in</tspan></text>
-  <rect x="655" y="505" width="22" height="42" fill="#3fb950"/>
+
+  <!-- header -->
+  <text x="110" y="200" font-size="40" font-weight="700" fill="#e6edf3"><tspan fill="#3fb950">❯ </tspan>PIE KIT</text>
+
+  <!-- modern app grid: the CLI the kit ships -->
+  <g font-size="52" font-weight="700" fill="#e6edf3" text-anchor="middle">
+    <g transform="translate(110,264)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#58a6ff"/>
+      <text x="150" y="116">fd</text>
+    </g>
+    <g transform="translate(450,264)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#3fb950"/>
+      <text x="150" y="116">rg</text>
+    </g>
+    <g transform="translate(790,264)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#bc8cff"/>
+      <text x="150" y="116">fzf</text>
+    </g>
+    <g transform="translate(110,462)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#d29922"/>
+      <text x="150" y="116">starship</text>
+    </g>
+    <g transform="translate(450,462)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#58a6ff"/>
+      <text x="150" y="116">clangd</text>
+    </g>
+    <g transform="translate(790,462)">
+      <rect width="300" height="180" rx="18" fill="#141a24" stroke="#232c3a" stroke-width="1.5"/>
+      <rect x="26" y="26" width="30" height="30" rx="9" fill="#f85149"/>
+      <text x="150" y="116">gdb</text>
+    </g>
   </g>
 </svg>
