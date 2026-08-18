@@ -21,7 +21,9 @@ const FEATURED = [
 ] as const;
 const featured = FEATURED.map((f) => {
   const entry = (f.collection === 'blog' ? blog : portfolio).find((x) => x.id === f.id);
-  return entry ? { ...f, title: entry.data.title, description: entry.data.description } : null;
+  return entry
+    ? { ...f, title: entry.data.title, description: entry.data.description, image: 'image' in entry.data ? entry.data.image : undefined }
+    : null;
 }).filter((f): f is NonNullable<typeof f> => f !== null);
 ---
 
@@ -41,6 +43,11 @@ const featured = FEATURED.map((f) => {
       <div class="featured-grid">
         {featured.map((f) => (
           <a href={f.href} class="featured-card">
+            {f.image && (
+              <span class="featured-thumb" aria-hidden="true">
+                <img src={f.image} alt="" loading="lazy" />
+              </span>
+            )}
             <span class="featured-tag">{f.tag}</span>
             <h3 class="featured-title">{f.title}</h3>
             {f.description && <p class="featured-desc">{f.description}</p>}
@@ -141,5 +148,21 @@ const featured = FEATURED.map((f) => {
     }
 
     sortPopular();
+
+    // Featured hover previews, positioned with Floating UI: prefer above the
+    // card, flip below when there's no room, stay inside the viewport.
+    const { computePosition, offset, flip, shift } = await import('@floating-ui/dom');
+    document.querySelectorAll<HTMLElement>('.featured-card').forEach((card) => {
+      const thumb = card.querySelector<HTMLElement>('.featured-thumb');
+      if (!thumb) return;
+      card.addEventListener('pointerenter', () => {
+        computePosition(card, thumb, {
+          placement: 'top',
+          middleware: [offset(10), flip(), shift({ padding: 12 })],
+        }).then(({ x, y }) => {
+          Object.assign(thumb.style, { left: `${x}px`, top: `${y}px` });
+        });
+      });
+    });
   </script>
 </Layout>

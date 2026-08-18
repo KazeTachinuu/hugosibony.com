@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+  <g transform="translate(0,39)">
+  <!-- video frame -->
+  <rect x="150" y="100" width="900" height="470" rx="16" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <circle cx="990" cy="150" r="11" fill="#f85149"/>
+  <!-- audio waveform -->
+  <g fill="#58a6ff">
+    <rect x="322" y="262" width="16" height="56" rx="8"/>
+    <rect x="354" y="240" width="16" height="100" rx="8"/>
+    <rect x="386" y="212" width="16" height="156" rx="8"/>
+    <rect x="418" y="252" width="16" height="76" rx="8"/>
+    <rect x="450" y="188" width="16" height="204" rx="8"/>
+    <rect x="482" y="228" width="16" height="124" rx="8"/>
+    <rect x="514" y="262" width="16" height="56" rx="8"/>
+    <rect x="546" y="200" width="16" height="180" rx="8"/>
+    <rect x="578" y="240" width="16" height="100" rx="8"/>
+    <rect x="610" y="176" width="16" height="228" rx="8"/>
+    <rect x="642" y="232" width="16" height="116" rx="8"/>
+    <rect x="674" y="262" width="16" height="56" rx="8"/>
+    <rect x="706" y="216" width="16" height="148" rx="8"/>
+    <rect x="738" y="248" width="16" height="84" rx="8"/>
+    <rect x="770" y="270" width="16" height="40" rx="8"/>
+    <rect x="802" y="256" width="16" height="68" rx="8"/>
+    <rect x="834" y="272" width="16" height="36" rx="8"/>
+    <rect x="866" y="264" width="16" height="52" rx="8"/>
+  </g>
+  <!-- caption bar -->
+  <rect x="210" y="450" width="780" height="86" rx="12" fill="#0c0f14" stroke="#2a3341" stroke-width="2"/>
+  <rect x="252" y="476" width="430" height="15" rx="7.5" fill="#dbe2ea"/>
+  <rect x="252" y="505" width="310" height="15" rx="7.5" fill="#7d8899"/>
+  <rect x="694" y="505" width="16" height="15" rx="4" fill="#58a6ff"/>
+  </g>
+</svg>

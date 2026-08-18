@@ -10,7 +10,6 @@ const CATEGORIES = [
 ];
 
 const GOODIES = [
-  { name: 'Portfolio', href: '/portfolio/', icon: 'lucide:layout-grid' },
   { name: 'Snippets', href: '/snippets/', icon: 'lucide:code' },
   { name: 'Reverse Shell Generator', href: '/tools/revshells/', icon: 'lucide:square-terminal' },
   { name: 'Assembly Lookup', href: '/tools/asm-lookup/', icon: 'lucide:cpu' },
@@ -65,11 +64,17 @@ function isActive(href: string) {
         </div>
       </div>
 
+      {/* Portfolio - direct link */}
+      <a href="/portfolio/" class:list={['nav-link', isActive('/portfolio/') && 'nav-link-active']}>
+        <Icon name="lucide:layout-grid" class="nav-link-icon" size={15} />
+        Portfolio
+      </a>
+
       {/* Goodies dropdown */}
       <div class="nav-dropdown" data-dropdown>
         <button
           type="button"
-          class:list={['nav-link', (isActive('/snippets/') || isActive('/portfolio/')) && 'nav-link-active']}
+          class:list={['nav-link', isActive('/snippets/') && 'nav-link-active']}
           data-dropdown-trigger
         >
           <Icon name="lucide:sparkles" class="nav-link-icon" size={15} />
@@ -139,6 +144,10 @@ function isActive(href: string) {
           <span>{name}</span>
         </a>
       ))}
+      <a href="/portfolio/" class:list={['mobile-menu-item', isActive('/portfolio/') && 'is-active']}>
+        <Icon name="lucide:layout-grid" class="mobile-menu-icon" size={18} />
+        <span>Portfolio</span>
+      </a>
       <p class="mobile-menu-label">Goodies</p>
       {GOODIES.map((item) => (
         <a href={item.href} class:list={['mobile-menu-item', isActive(item.href) && 'is-active']} target={item.external ? '_blank' : undefined} rel={item.external ? 'noopener' : undefined}>
