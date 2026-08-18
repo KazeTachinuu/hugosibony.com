@@ -26,6 +26,8 @@ const portfolio = defineCollection({
     github: z.array(z.string()).default([]),
     githubCard: z.boolean().default(false),
     image: z.string().optional(),
+    // card image only; skip the detail-page hero (e.g. README already shows the same shot)
+    hideHero: z.boolean().default(false),
     tech: z.array(z.object({
       name: z.string(),
       logo: z.string().optional(),

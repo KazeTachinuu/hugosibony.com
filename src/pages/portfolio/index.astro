@@ -6,15 +6,32 @@ import { getCollection } from 'astro:content';
 const projects = (await getCollection('portfolio', (e) => import.meta.env.DEV || !e.data.draft)).sort(
   (a, b) => +new Date(b.data.updated ?? b.data.date) - +new Date(a.data.updated ?? a.data.date),
 );
+
+// "projects" is on every entry, useless as a filter
+const counts = new Map<string, number>();
+for (const p of projects) for (const c of p.data.categories) if (c !== 'projects') counts.set(c, (counts.get(c) ?? 0) + 1);
+const cats = [...counts.keys()].sort();
+const icons: Record<string, string> = { epita: '/images/epita-mark.png' };
 ---
 
 <Layout title="Portfolio" mainClass="max-w-5xl mx-auto px-6 py-16">
   <PageHeader title="Portfolio" section="portfolio" />
 
+  <div class="project-filters" role="group" aria-label="Filter projects by category">
+    <button class="project-filter is-active" data-cat="">
+      all<span class="project-filter-count">{projects.length}</span>
+    </button>
+    {cats.map((c) => (
+      <button class="project-filter" data-cat={c}>
+        {icons[c] && <img src={icons[c]} alt="" />}{c}<span class="project-filter-count">{counts.get(c)}</span>
+      </button>
+    ))}
+  </div>
+
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
     {projects.map((p) => {
       return (
-        <a href={`/portfolio/${p.id}/`} class="project-card">
+        <a href={`/portfolio/${p.id}/`} class="project-card" data-cats={p.data.categories.join(' ')}>
           <div class="project-img">
             {p.data.image ? (
               <img src={p.data.image} alt="" loading="lazy" />
@@ -42,4 +59,28 @@ const projects = (await getCollection('portfolio', (e) => import.meta.env.DEV ||
       );
     })}
   </div>
+
+  <script>
+    const buttons = Array.from(document.querySelectorAll<HTMLElement>('.project-filter'));
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.project-card'));
+
+    const apply = (cat: string) => {
+      for (const b of buttons) b.classList.toggle('is-active', (b.dataset.cat ?? '') === cat);
+      for (const card of cards) {
+        card.hidden = !!cat && !(card.dataset.cats ?? '').split(' ').includes(cat);
+      }
+    };
+
+    for (const btn of buttons) {
+      btn.addEventListener('click', () => {
+        const cat = btn.dataset.cat ?? '';
+        apply(cat);
+        history.replaceState(null, '', cat ? `?cat=${cat}` : location.pathname);
+      });
+    }
+
+    // shareable filter links: /portfolio/?cat=epita
+    const initial = new URLSearchParams(location.search).get('cat');
+    if (initial && buttons.some((b) => b.dataset.cat === initial)) apply(initial);
+  </script>
 </Layout>

@@ -38,7 +38,7 @@ const { Content } = await render(post);
     )}
   </ArticleHeader>
 
-  {post.data.image && (
+  {post.data.image && !post.data.hideHero && (
     <div class="project-hero">
       <img src={post.data.image} alt={post.data.title} loading="lazy" />
     </div>
