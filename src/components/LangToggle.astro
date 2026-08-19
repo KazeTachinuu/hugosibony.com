@@ -15,7 +15,7 @@ interface Props {
 const { langs = ['en', 'fr'], default: def = langs[0], storageKey = 'lang' } = Astro.props;
 ---
 
-<div class="lang-toggle" role="group" aria-label="Language" data-storage-key={storageKey}>
+<div class="lang-toggle" role="group" aria-label="Language" data-storage-key={storageKey} hidden>
   {langs.map((l) => (
     <button type="button" data-lang-btn={l} aria-pressed={String(l === def)}>{l.toUpperCase()}</button>
   ))}
@@ -53,6 +53,10 @@ const { langs = ['en', 'fr'], default: def = langs[0], storageKey = 'lang' } = A
     const key = toggle.dataset.storageKey || 'lang';
     const btns = toggle.querySelectorAll<HTMLButtonElement>('[data-lang-btn]');
     const contents = document.querySelectorAll<HTMLElement>('[data-lang-content]');
+
+    // Only relevant on pages that actually have translated content.
+    if (!contents.length) return;
+    toggle.hidden = false;
 
     const apply = (lang: string) => {
       contents.forEach((el) => { el.hidden = el.dataset.langContent !== lang; });
