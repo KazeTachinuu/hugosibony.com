@@ -4,6 +4,7 @@ import 'katex/dist/katex.min.css';
 import { SITE } from '~/lib/site';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
+import SearchPalette from '~/components/SearchPalette.astro';
 import ThemeScript from '~/components/ThemeScript.astro';
 
 interface Props {
@@ -71,6 +72,7 @@ const ogImage = image ? new URL(image, Astro.site).href : undefined;
       <slot />
     </main>
     <Footer />
+    <SearchPalette />
 
     <script>
       // Theme toggle - preserves classes on icons (uses CSS to swap moon/sun)
@@ -84,23 +86,12 @@ const ogImage = image ? new URL(image, Astro.site).href : undefined;
       document.querySelectorAll('[data-theme-toggle]').forEach((btn) =>
         btn.addEventListener('click', toggleTheme),
       );
+      // Ctrl+K and "/" are owned by SearchPalette. Here we only handle "t".
       document.addEventListener('keydown', (e) => {
         const t = e.target as HTMLElement;
         const editing = t?.tagName === 'INPUT' || t?.tagName === 'TEXTAREA' || t?.isContentEditable;
-        // ⌘K or Ctrl+K → go to search
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-          e.preventDefault();
-          window.location.href = '/search/';
-          return;
-        }
-        if (editing) return;
-        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (editing || e.metaKey || e.ctrlKey || e.altKey) return;
         if (e.key === 't') toggleTheme();
-        // / → go to search
-        if (e.key === '/') {
-          e.preventDefault();
-          window.location.href = '/search/';
-        }
       });
 
       // Live time in footer

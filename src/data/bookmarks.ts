@@ -198,9 +198,9 @@ export const BOOKMARKS = {
       description: "Plain-text creds from stealer logs and breach DBs (pay-per-unlock, Paris-based)",
     },
     {
-      name: "HudsonRock Cavalier",
-      url: "https://cavalier.hudsonrock.com/",
-      description: "Stealer-log forensics: which malware, what machine, when",
+      name: "FuiteLookup",
+      url: "https://fuitelookup.com/",
+      description: "Very fast leaked-credential search",
     },
     {
       name: "DeHashed",

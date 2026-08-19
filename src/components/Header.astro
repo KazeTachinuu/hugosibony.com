@@ -23,7 +23,6 @@ const GOODIES = [
 const MORE = [
   { name: 'Bookmarks', href: '/bookmarks/', icon: 'lucide:bookmark' },
   { name: 'whoami', href: '/about/', icon: 'lucide:terminal' },
-  { name: 'Search', href: '/search/', icon: 'lucide:search' },
   { name: 'RSS feed', href: '/rss.xml', icon: 'lucide:rss' },
 ];
 
@@ -108,9 +107,9 @@ function isActive(href: string) {
 
     <div class="header-actions">
       <LangToggle langs={['en', 'fr']} default="en" storageKey="site-lang" />
-      <a href="/search/" aria-label="Search" title="Search (Ctrl+K or /)" class="icon-btn hidden sm:inline-flex">
+      <button type="button" data-search-open aria-label="Search" title="Search (Ctrl+K or /)" class="icon-btn hidden sm:inline-flex">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      </a>
+      </button>
       <button type="button" data-theme-toggle aria-label="Toggle theme" class="icon-btn">
         <svg data-theme-icon="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="dark:hidden"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg data-theme-icon="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden dark:block"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
@@ -157,6 +156,11 @@ function isActive(href: string) {
         </a>
       ))}
       <p class="mobile-menu-label">More</p>
+      <button type="button" data-search-open class="mobile-menu-item">
+        <Icon name="lucide:search" class="mobile-menu-icon" size={18} />
+        <span>Search</span>
+        <kbd class="mobile-menu-kbd">⌘K</kbd>
+      </button>
       {MORE.map(({ name, href, icon }) => (
         <a href={href} class:list={['mobile-menu-item', isActive(href) && 'is-active']}>
           <Icon name={icon} class="mobile-menu-icon" size={18} />

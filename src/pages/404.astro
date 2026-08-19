@@ -23,9 +23,9 @@ const recent = (await getCollection('blog', (e) => import.meta.env.DEV || !e.dat
     <a href="/" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition-opacity bg-inverted text-inverted">
       ← Go home
     </a>
-    <a href="/search/" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium border border-theme text-muted hover:text-page transition-colors">
+    <button type="button" data-search-open class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium border border-theme text-muted hover:text-page transition-colors cursor-pointer">
       Search ⌘K
-    </a>
+    </button>
   </div>
 
   {recent.length > 0 && (
