@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-monospace,'SF Mono',Menlo,Consolas,monospace">
+  <rect width="1200" height="750" fill="#0f1319"/>
+
+  <!-- the gate is macOS policy: shut, but for what is on the list -->
+  <g transform="translate(735,122) scale(2.8) translate(-12,-12)" fill="#8b96a5">
+    <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.088-4.61 1.088zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/>
+  </g>
+  <rect x="728" y="167" width="14" height="105" rx="7" fill="#46526b"/>
+  <rect x="728" y="318" width="14" height="322" rx="7" fill="#46526b"/>
+
+  <!-- listed: straight through the opening -->
+  <rect x="170" y="227" width="400" height="136" rx="20" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <text x="370" y="282" text-anchor="middle" font-size="25" letter-spacing="2" fill="#7d8899">USB key</text>
+  <text x="370" y="328" text-anchor="middle" font-size="40" font-weight="700" fill="#58a6ff">30de:6545</text>
+  <g stroke="#3fb950" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="610" y1="295" x2="778" y2="295"/><polyline points="758,279 780,295 758,311"/>
+  </g>
+  <text x="812" y="312" font-size="50" fill="#dbe2ea">mounted</text>
+
+  <!-- not listed: held at the gate -->
+  <rect x="170" y="407" width="400" height="136" rx="20" fill="#161c26" stroke="#2a3341" stroke-width="2"/>
+  <text x="370" y="462" text-anchor="middle" font-size="25" letter-spacing="2" fill="#7d8899">USB key</text>
+  <text x="370" y="508" text-anchor="middle" font-size="40" font-weight="700" fill="#58a6ff">05e3:0749</text>
+  <g stroke="#f85149" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="610" y1="475" x2="710" y2="475"/><polyline points="690,459 712,475 690,491"/>
+  </g>
+  <rect x="725" y="445" width="20" height="60" rx="10" fill="#f85149"/>
+  <text x="812" y="492" font-size="50" fill="#f85149">refused</text>
+</svg>
