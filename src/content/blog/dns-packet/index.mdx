@@ -1,8 +1,8 @@
 ---
 title: "Inside a DNS packet"
 description: "The DNS message format field by field: the 12-byte header and its flags, the question, the answer records, and EDNS. Plus the record types a domain actually holds. Part 2 of a DNS series."
-date: 2026-07-17T12:00:00Z
-updated: 2026-07-18
+date: 2026-07-17T11:00:00Z
+updated: 2026-10-11
 categories: ["notes"]
 tags: ["dns", "networking"]
 ---
@@ -30,7 +30,7 @@ The answer section is a list of **resource records**. `A` gets the headlines, bu
 
 Nothing above proves an answer is genuine. A resolver on the path could forge one, and a plain lookup would never notice. **DNSSEC** fixes that with signatures. Each zone signs its records with a private key and publishes the signature as an **RRSIG** and the public key as a **DNSKEY**. The parent zone vouches for that key with a **DS** record, so trust chains from the root down to the name. A validating resolver checks the chain and sets the **AD** bit in the header when it holds.
 
-DNSSEC proves an answer is authentic; it does not hide it. Confidentiality is a separate job, done by [encryption](/blog/dns-encryption/).
+DNSSEC proves an answer is authentic; it does not hide it. Confidentiality is a separate job, done by [encryption](/blog/dns-security/).
 
 ## References
 
@@ -45,7 +45,6 @@ DNSSEC proves an answer is authentic; it does not hide it. Confidentiality is a 
 
 1. [How DNS works](/blog/what-is-dns/)
 2. **Inside a DNS packet** (this post)
-3. [Encrypting DNS](/blog/dns-encryption/)
-4. [How malware abuses DNS](/blog/dns-malware/)
+3. [DNS security: encryption and abuse](/blog/dns-security/)
 
 Practical companion: [Which resolver to choose](/blog/public-dns-resolvers/).

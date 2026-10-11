@@ -1728,6 +1728,11 @@
 }
 @media (max-width: 640px) {
   .xz-gotrewrite-grid { grid-template-columns: 1fr; }
+  /* stack each row so the "→ target" wraps under the symbol instead of
+     clipping off the right edge on narrow screens */
+  .xz-gotrewrite-col { min-width: 0; }
+  .xz-gotrewrite-rows li { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+  .xz-gotrewrite-rows li span { padding-left: 1rem; }
 }
 
 /* Path-in chain: two patches and one transitive dep bring liblzma into sshd

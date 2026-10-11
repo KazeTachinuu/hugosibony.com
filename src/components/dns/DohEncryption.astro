@@ -90,7 +90,8 @@ const TRANSPORTS: Transport[] = [
   </div>
 
   {TRANSPORTS.map((t, i) => (
-    <div class="doh-panel" data-i={i} data-hidden={i !== 0 ? 'true' : undefined}>
+    <div class="doh-panel" data-i={i}>
+      <p class="doh-panel-head"><strong>{t.name}</strong> {t.full}</p>
       <div class="doh-packet" data-encrypted={String(t.encrypted)}>
         <span class="doh-packet-lock"><Icon name="lucide:lock" size={14} /></span>
         <code class="doh-packet-text">{t.wire}</code>
@@ -257,17 +258,34 @@ const TRANSPORTS: Transport[] = [
   @media (prefers-reduced-motion: reduce) {
     .doh-tab { transition: none; }
   }
+
+  /* progressive enhancement: no JS -> all panels stacked with headings, no tab bar */
+  .doh-panel-head { margin: 0; font: 600 0.95rem var(--font-sans); color: var(--page-text); }
+  .doh-panel-head strong { font: 700 0.95rem var(--font-mono); color: var(--accent); margin-right: 0.4rem; }
+  .doh[data-enhanced] .doh-panel-head { display: none; }
+  .doh:not([data-enhanced]) .doh-tabs { display: none; }
+  .doh:not([data-enhanced]) .doh-panel + .doh-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
 </style>
 
-<script>
-  document.querySelectorAll<HTMLElement>('.doh').forEach((root) => {
-    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.doh-tab')];
-    const panels = [...root.querySelectorAll<HTMLElement>('.doh-panel')];
-    tabs.forEach((tab, i) =>
-      tab.addEventListener('click', () => {
-        tabs.forEach((t, n) => t.setAttribute('aria-selected', String(n === i)));
-        panels.forEach((p, n) => (n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true')));
-      }),
-    );
-  });
+<script is:inline>
+  (function () {
+    document.querySelectorAll('.doh').forEach(function (root) {
+      root.setAttribute('data-enhanced', '');
+      var tabs = [].slice.call(root.querySelectorAll('.doh-tab'));
+      var panels = [].slice.call(root.querySelectorAll('.doh-panel'));
+      panels.forEach(function (p, n) { if (n !== 0) p.setAttribute('data-hidden', 'true'); });
+      tabs.forEach(function (tab, i) {
+        tab.addEventListener('click', function () {
+          tabs.forEach(function (t, n) { t.setAttribute('aria-selected', String(n === i)); });
+          panels.forEach(function (p, n) {
+            n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true');
+          });
+        });
+      });
+    });
+  })();
 </script>

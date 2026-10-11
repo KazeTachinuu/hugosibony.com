@@ -102,7 +102,7 @@ const TECHS: Tech[] = [
 
   <div class="dnsx-panels">
     {TECHS.map((t, i) => (
-      <article class="dnsx-panel" data-i={i} data-hidden={i !== 0 ? 'true' : undefined}>
+      <article class="dnsx-panel" data-i={i}>
         <div class="dnsx-panel-head">
           <h4 class="dnsx-panel-name">{t.name}</h4>
           {t.attack && (
@@ -275,17 +275,31 @@ const TECHS: Tech[] = [
   @media (prefers-reduced-motion: reduce) {
     .dnsx-tab { transition: none; }
   }
+
+  /* progressive enhancement: no JS -> all panels stacked, no tab bar */
+  .dnsx:not([data-enhanced]) .dnsx-tabs { display: none; }
+  .dnsx:not([data-enhanced]) .dnsx-panel + .dnsx-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
 </style>
 
-<script>
-  document.querySelectorAll<HTMLElement>('.dnsx').forEach((root) => {
-    const tabs = [...root.querySelectorAll<HTMLButtonElement>('.dnsx-tab')];
-    const panels = [...root.querySelectorAll<HTMLElement>('.dnsx-panel')];
-    tabs.forEach((tab, i) =>
-      tab.addEventListener('click', () => {
-        tabs.forEach((t, n) => t.setAttribute('aria-selected', String(n === i)));
-        panels.forEach((p, n) => (n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true')));
-      }),
-    );
-  });
+<script is:inline>
+  (function () {
+    document.querySelectorAll('.dnsx').forEach(function (root) {
+      root.setAttribute('data-enhanced', '');
+      var tabs = [].slice.call(root.querySelectorAll('.dnsx-tab'));
+      var panels = [].slice.call(root.querySelectorAll('.dnsx-panel'));
+      panels.forEach(function (p, n) { if (n !== 0) p.setAttribute('data-hidden', 'true'); });
+      tabs.forEach(function (tab, i) {
+        tab.addEventListener('click', function () {
+          tabs.forEach(function (t, n) { t.setAttribute('aria-selected', String(n === i)); });
+          panels.forEach(function (p, n) {
+            n === i ? p.removeAttribute('data-hidden') : p.setAttribute('data-hidden', 'true');
+          });
+        });
+      });
+    });
+  })();
 </script>
