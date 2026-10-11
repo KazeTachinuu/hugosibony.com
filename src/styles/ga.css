@@ -505,6 +505,13 @@
   overflow: hidden;
   background: var(--page-bg);
 }
+.ga-ioc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem 0;
+  margin: 0 0 0.65rem;
+}
 .ga-ioc-eyebrow {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -512,8 +519,26 @@
   text-transform: uppercase;
   color: var(--ga-attacker);
   font-weight: 700;
-  padding: 0.85rem 1.25rem 0;
-  margin: 0 0 0.65rem;
+  padding: 0;
+  margin: 0;
+}
+.ga-ioc-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ga-ioc-export:hover {
+  color: var(--ga-attacker);
+  border-color: var(--ga-attacker);
 }
 .ga-ioc table {
   width: 100%;
