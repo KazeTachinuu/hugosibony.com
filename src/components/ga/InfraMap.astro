@@ -1,0 +1,118 @@
+<figure class="ga-infra not-prose">
+  <p class="ga-eyebrow">Hosting infrastructure</p>
+
+  <svg class="ga-infra-d" viewBox="0 0 448 392" role="img" aria-labelledby="ga-infra-title ga-infra-desc">
+    <title id="ga-infra-title">my-github[.]com hosting infrastructure</title>
+    <desc id="ga-infra-desc">The mail relay at .3 sends the phishing email; the victim's click goes through Cloudflare to the origin at .199, which hosts the phishing kit and the C2. Both servers sit in one /24 registered to Vigilant Cyber SAS and announced by AS153622 (Madina IT).</desc>
+    <defs>
+      <marker id="ga-infra-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" class="ga-infra-head"/>
+      </marker>
+    </defs>
+
+    <!-- zone first, connectors second, nodes last -->
+    <rect class="ga-infra-zone" x="8" y="144" width="432" height="136" rx="8"/>
+    <text class="ga-infra-zonelabel" x="24" y="166">193[.]32[.]204[.]0/24 · "VIGILANT CYBER SAS"</text>
+
+    <line class="ga-infra-wire" x1="112" y1="184" x2="112" y2="106" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="120" y="128">EMAIL</text>
+
+    <line class="ga-infra-wire" x1="200" y1="64" x2="246" y2="64" marker-end="url(#ga-infra-arrow)"/>
+    <rect class="ga-infra-mask" x="204" y="44" width="40" height="12" rx="2"/>
+    <text class="ga-infra-label" x="224" y="53" text-anchor="middle">CLICK</text>
+
+    <line class="ga-infra-wire" x1="336" y1="104" x2="336" y2="182" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="344" y="128">ORIGIN</text>
+
+    <line class="ga-infra-wire is-dashed" x1="224" y1="280" x2="224" y2="318" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="232" y="304">ANNOUNCED BY</text>
+
+    <g class="ga-infra-node is-input">
+      <rect x="24" y="24" width="176" height="80" rx="6"/>
+      <text class="tag" x="40" y="44">TARGET</text>
+      <text class="name" x="40" y="68">Victim inbox</text>
+      <text class="sub" x="40" y="88">link /&lt;8-char token&gt;</text>
+    </g>
+
+    <g class="ga-infra-node is-external">
+      <rect x="248" y="24" width="176" height="80" rx="6"/>
+      <text class="tag" x="264" y="44">DOMAIN</text>
+      <text class="name" x="264" y="68">my-github[.]com</text>
+      <text class="sub" x="264" y="88">Dynadot · Cloudflare</text>
+    </g>
+
+    <g class="ga-infra-node">
+      <rect x="24" y="184" width="176" height="80" rx="6"/>
+      <text class="tag" x="40" y="204">MAIL RELAY</text>
+      <text class="name" x="40" y="228">.3</text>
+      <text class="sub" x="40" y="248">Exim 4.97 · FASTPANEL</text>
+    </g>
+
+    <g class="ga-infra-node is-focal">
+      <rect x="248" y="184" width="176" height="80" rx="6"/>
+      <text class="tag" x="264" y="204">PHISHING + C2</text>
+      <text class="name" x="264" y="228">.199</text>
+      <text class="sub" x="264" y="248">kit 443 · sink 8443</text>
+    </g>
+
+    <g class="ga-infra-node is-store">
+      <rect x="24" y="320" width="400" height="56" rx="6"/>
+      <text class="name" x="40" y="344">AS153622, Madina IT</text>
+      <text class="sub" x="40" y="364">announces the /24 · APNIC, Bangladesh</text>
+    </g>
+  </svg>
+
+  <!-- phone layout: one column, same nodes and wires -->
+  <svg class="ga-infra-m" viewBox="0 0 320 528" role="img" aria-labelledby="ga-infra-m-title ga-infra-m-desc">
+    <title id="ga-infra-m-title">my-github[.]com hosting infrastructure</title>
+    <desc id="ga-infra-m-desc">The mail relay at .3 sends the phishing email; the victim's click goes through Cloudflare to the origin at .199. Both servers sit in one /24 registered to Vigilant Cyber SAS and announced by AS153622 (Madina IT).</desc>
+
+    <rect class="ga-infra-zone" x="8" y="216" width="304" height="208" rx="8"/>
+    <text class="ga-infra-zonelabel" x="64" y="238">193[.]32[.]204[.]0/24</text>
+
+    <path class="ga-infra-wire" d="M64 376 H40 Q32 376 32 368 V56 Q32 48 40 48 H62" marker-end="url(#ga-infra-arrow)"/>
+    <rect class="ga-infra-mask" x="38" y="190" width="40" height="12" rx="2"/>
+    <text class="ga-infra-label" x="42" y="199">EMAIL</text>
+
+    <line class="ga-infra-wire" x1="280" y1="80" x2="280" y2="110" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="272" y="99" text-anchor="end">CLICK</text>
+
+    <line class="ga-infra-wire" x1="280" y1="176" x2="280" y2="250" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="272" y="199" text-anchor="end">ORIGIN</text>
+
+    <line class="ga-infra-wire is-dashed" x1="184" y1="424" x2="184" y2="454" marker-end="url(#ga-infra-arrow)"/>
+    <text class="ga-infra-label" x="192" y="443">ANNOUNCED BY</text>
+
+    <g class="ga-infra-node is-input">
+      <rect x="64" y="16" width="240" height="64" rx="6"/>
+      <text class="tag" x="80" y="34">TARGET</text>
+      <text class="name" x="80" y="54">Victim inbox</text>
+      <text class="sub" x="80" y="72">link /&lt;8-char token&gt;</text>
+    </g>
+    <g class="ga-infra-node is-external">
+      <rect x="64" y="112" width="240" height="64" rx="6"/>
+      <text class="tag" x="80" y="130">DOMAIN</text>
+      <text class="name" x="80" y="150">my-github[.]com</text>
+      <text class="sub" x="80" y="168">Dynadot · Cloudflare</text>
+    </g>
+    <g class="ga-infra-node is-focal">
+      <rect x="64" y="252" width="240" height="64" rx="6"/>
+      <text class="tag" x="80" y="270">PHISHING + C2</text>
+      <text class="name" x="80" y="290">.199</text>
+      <text class="sub" x="80" y="308">kit 443 · sink 8443</text>
+    </g>
+    <g class="ga-infra-node">
+      <rect x="64" y="344" width="240" height="64" rx="6"/>
+      <text class="tag" x="80" y="362">MAIL RELAY</text>
+      <text class="name" x="80" y="382">.3</text>
+      <text class="sub" x="80" y="400">Exim 4.97 · FASTPANEL</text>
+    </g>
+    <g class="ga-infra-node is-store">
+      <rect x="64" y="456" width="240" height="56" rx="6"/>
+      <text class="name" x="80" y="480">AS153622, Madina IT</text>
+      <text class="sub" x="80" y="500">announces the /24 · BD</text>
+    </g>
+  </svg>
+
+  <figcaption>Ports 80 and 3000 on .199 are the GhostAction C2 receivers; the phishing kit and its token sink share the same host.</figcaption>
+</figure>
